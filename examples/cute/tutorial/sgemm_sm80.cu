@@ -193,15 +193,24 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
     print("tCrA : "); print(tCrA); print("\n");
     print("tCrB : "); print(tCrB); print("\n");
     print("tCrC : "); print(tCrC); print("\n");
+    print("shape(tCrA) : "); print(shape(tCrA)); print("\n");
+    print("shape(tCsA) : "); print(shape(tCsA)); print("\n");
+    print("shape(tCrA) == shape(tCsA) : "); print(shape(tCrA) == shape(tCsA)); print("\n");
   }
 #endif
 
-#if 1
+#if 0
 
   // Current pipe index in smem to read from
   int smem_pipe_read  = 0;
   // Current pipe index in smem to write to
   int smem_pipe_write = K_PIPE_MAX-1;
+
+  /*
+  EA: So 
+  - The smem_pipe_read starts at 0
+  - The smem_pipe_write starts at the last k tile index (i.e. size<3>(tAsA) - 1)
+  */
 
   // Pipe slice
   Tensor tCsA_p = tCsA(_,_,_,smem_pipe_read);
@@ -341,7 +350,7 @@ gemm_nt(int m, int n, int k,
   print(mmaC);
 #endif
 
-#if 0
+#if 1
   print_latex(copyA);
   print_latex(copyB);
   print_latex(mmaC);
@@ -455,7 +464,7 @@ gemm(char transA, char transB, int m, int n, int k,
 }
 
 
-int main(int argc, char** argv)
+int old_main(int argc, char** argv)
 {
   cudaDeviceProp props;
   cudaError_t error = cudaGetDeviceProperties(&props, 0);
@@ -514,12 +523,12 @@ int main(int argc, char** argv)
   thrust::device_vector<TA> d_A = h_A;
   thrust::device_vector<TB> d_B = h_B;
   thrust::device_vector<TC> d_C = h_C;
-
+#if 0
   double gflops = (2.0*m*n*k) * 1e-9;
 
   const int timing_iterations = 100;
   GPU_Clock timer;
-
+#endif
   int ldA = 0, ldB = 0, ldC = m;
 
   if (transA == 'N') {
@@ -548,7 +557,7 @@ int main(int argc, char** argv)
        d_C.data().get(), ldC);
   CUTE_CHECK_LAST();
   thrust::host_vector<TC> cute_result = d_C;
-
+#if 0
   // Timing iterations
   timer.start();
   for (int i = 0; i < timing_iterations; ++i) {
@@ -562,6 +571,16 @@ int main(int argc, char** argv)
   double cute_time = timer.seconds() / timing_iterations;
   CUTE_CHECK_LAST();
   printf("CUTE_GEMM:     [%6.1f]GFlop/s  (%6.4f)ms\n", gflops / cute_time, cute_time*1000);
+#endif
+  return 0;
+}
 
+int main() {
+  using namespace cute;
+
+  using my_op = SM80_16x8x16_F16F16F16F16_TN;
+  auto my_mma = make_tiled_mma(my_op{}, make_layout(make_shape(_1{}, _1{}, _1{})));
+
+  print_latex(my_mma); print("\n");
   return 0;
 }

@@ -166,6 +166,11 @@ cp_async_fence()
 #if defined(CUTE_ARCH_CP_ASYNC_SM80_ENABLED)
   asm volatile("cp.async.commit_group;\n" ::);
 #endif
+/*
+EA: "commit_group" is a weird thing for this to be called, given that committing
+is what it doesn't wait for...
+*/
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

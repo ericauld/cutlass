@@ -127,6 +127,13 @@ struct MMA_Atom<MMA_Traits<Args...>>
   //     when copying from partition to fragment.
   //
 
+  /* 
+  EA: What does it mean "match it" in the registers? What opportunity is there?
+  I guess look at how data in allocated in the registers...does it have to do
+  with the order in which the information is stored? I wouldn't think the TCIs
+  gave us leeway over that.
+  */
+
   template <class CTensor>
   CUTE_HOST_DEVICE static constexpr
   auto
@@ -247,6 +254,15 @@ struct TiledMMA : MMA_Atom
     CUTE_STATIC_ASSERT_V(rank(ctensor) >= Int<2>{});
     //CUTE_STATIC_ASSERT_V(size<0>(ctensor) % size<0>(TiledShape_MNK{}) == Int<0>{});
     //CUTE_STATIC_ASSERT_V(size<1>(ctensor) % size<1>(TiledShape_MNK{}) == Int<0>{});
+
+    /*
+    EA: Note the divisibility condition above. It's not equality. That's why
+    `thrfrg_*` need a tensor argument and can't just figure everything out
+    themselves.
+
+    EA: I imagine that doing this w reckless abandon creates a lot of register
+    pressure, though.
+    */
 
     // Reorder the tensor for the TiledAtom
     auto t_tile = make_tile(get<0>(PermutationMNK{}),
