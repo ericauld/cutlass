@@ -55,6 +55,15 @@
  *      The batched product of matrices. Dispatches to [4] for each (k).
  */
 
+  /* 
+ EA: Wouldn't you expect it to pay attention to the size of the mma? Is K
+ somehow iterating over tiles, like there's some mode that's the elements
+ internal to the mma?
+
+ Could it be that the "V" dimension holds the values internal to the mma? No,
+ bcs it's describing that multiplication as elementwise....
+ */
+
 namespace cute
 {
 
@@ -414,6 +423,11 @@ gemm(MMA_Atom<MMA>       const& mma,
     gemm(mma, D, A(_,_,k), B(_,_,k), C);
   }
 }
+
+/*
+EA: Isn't this above a little weird? Why are we necessarily incrementing k by
+one each time? Shouldn't we increment it by the size of k in the matmul operation?
+*/
 
 //
 // Thread-Local Shared-Memory GEMMs
