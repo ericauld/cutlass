@@ -125,6 +125,10 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
 
   // Total count of tiles
   int k_tile_count = size<3>(tAgA);
+  /*
+  EA: Isn't this a little weird? Wouldn't you expect it to look at gA, not tAgA,
+  even if it ends up being the same?
+  */
   // Current tile index in gmem to read from
   int k_tile_next = 0;
 
