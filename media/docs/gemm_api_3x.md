@@ -92,9 +92,6 @@ In CUTLASS 3.0, we assemble kernels by first composing a collective mainloop and
 collective epilogue together at the kernel layer, and then wrapping them with a
 host-side adapter to form a GEMM handle to that kernel.
 
-EA: collective mainloop, collective epilogue *at kernel layer*...what does that
-mean "at the kernel layer"?
-
 The following sections describe these components in the order a user should
 instantiate them in order to assemble a kernel.  This order is
 
@@ -106,7 +103,7 @@ instantiate them in order to assemble a kernel.  This order is
 
 This order is also reflected in the [CUTLASS 3.0 Hopper kernel
 examples](/examples/48_hopper_warp_specialized_gemm) as seen in the excerpt
-below.
+below
 
 ```c++
 // Step 1: Generate the required collective layer mainloop specialization
@@ -119,7 +116,10 @@ using CollectiveMainloop = typename cutlass::gemm::collective::CollectiveBuilder
     cutlass::gemm::collective::StageCountAuto,
     cutlass::gemm::collective::KernelScheduleAuto
   >::CollectiveOp;
-
+```
+EA: How is this "generating a specialization"? This is just defining a type
+alias, right? Sonnet agrees this will not generate a specialization...
+```c++
 // Step 2: Specify the collective layer epilogue type
 using CollectiveEpilogue = cutlass::epilogue::collective::DefaultEpilogue<
     cutlass::gemm::TagToStrideC_t<LayoutC>,
