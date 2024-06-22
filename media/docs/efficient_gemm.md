@@ -192,6 +192,8 @@ parameters of m=128, n=128, k=4096 and partition=16 will result in 16 batched st
 with each batch of m=128, n=128, k=256. PartitionedK also allows scenario where k is not divisible
 by the partition count.
 
+EA: Where is partitionedK GEMM represented in code?
+
 For example, parameters of m=128, n=128, k=4096 and partition=20
 will result in 20 batched strided GEMMs.
 The first 19 batches will have m=128, n=128, and k=4096/20=204,

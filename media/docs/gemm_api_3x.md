@@ -74,6 +74,8 @@ as a single `while` loop that queries the
 [work tile scheduler](/include/cutlass/gemm/kernel/sm90_tile_scheduler.hpp)
 for problem tiles on which to compute.
 
+EA: Don't get what this means
+
 Inside the three nested `for` loops,
 one finds code that pulls matrix tiles
 from global memory into more "local" memory
