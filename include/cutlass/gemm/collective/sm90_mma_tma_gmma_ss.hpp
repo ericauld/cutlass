@@ -295,6 +295,8 @@ struct CollectiveMma<
     auto block_tma_a = tma_load_a.get_slice(cluster_local_block_id.y);
     auto block_tma_b = tma_load_b.get_slice(cluster_local_block_id.x);
 
+    /* EA: What's this? */
+
     // Applies the mapping from block_tma_a
     Tensor tAgA = block_tma_a.partition_S(gA);                                                // (TMA,TMA_M,TMA_K,k)
     Tensor tAsA = block_tma_a.partition_D(sA);                                                // (TMA,TMA_M,TMA_K,PIPE)
@@ -305,6 +307,8 @@ struct CollectiveMma<
     //
     // Prepare TMA membars and PREFETCH
     //
+
+    /* EA: Membars? Members? */
 
     // Number of pipelined k-tiles in smem
     constexpr int K_PIPE_MAX = DispatchPolicy::Stages;
