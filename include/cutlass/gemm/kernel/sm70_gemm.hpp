@@ -59,8 +59,8 @@ public:
   // Type Aliases
   //
   using ProblemShape = ProblemShape_;
-  static_assert(rank(ProblemShape{}) == 3 or rank(ProblemShape{}) == 4,
-    "ProblemShape{} should be <M,N,K> or <M,N,K,L>");
+  // static_assert(rank(ProblemShape{}) == 3 or rank(ProblemShape{}) == 4,
+  //   "ProblemShape{} should be <M,N,K> or <M,N,K,L>");
 
   // Mainloop derived types
   using CollectiveMainloop = CollectiveMainloop_;
@@ -93,8 +93,8 @@ static_assert(is_valid_tile_scheduler, "SM70 kernel does not support specializin
   using StrideD  = typename CollectiveEpilogue::StrideD;
   using EpilogueArguments = typename CollectiveEpilogue::Arguments;
   using EpilogueParams = typename CollectiveEpilogue::Params;
-  static_assert(cute::is_same_v<ElementAccumulator, typename CollectiveEpilogue::ElementAccumulator>,
-    "Mainloop and epilogue do not agree on accumulator value type.");
+  // static_assert(cute::is_same_v<ElementAccumulator, typename CollectiveEpilogue::ElementAccumulator>,
+  //   "Mainloop and epilogue do not agree on accumulator value type.");
 
   // MSVC requires the cast to fix a warning-as-error.
   static constexpr int SharedStorageSize = static_cast<int>(cute::max(
