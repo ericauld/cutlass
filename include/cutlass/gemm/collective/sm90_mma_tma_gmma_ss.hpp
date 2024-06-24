@@ -308,6 +308,8 @@ struct CollectiveMma<
     // Prepare TMA membars and PREFETCH
     //
 
+    /* EA: Membars? Members? */
+
     // Number of pipelined k-tiles in smem
     constexpr int K_PIPE_MAX = DispatchPolicy::Stages;
 
