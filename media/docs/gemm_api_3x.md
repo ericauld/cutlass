@@ -179,9 +179,6 @@ and the epilogue. This API is the composition point for optimizations such as
 mainloop fusions and epilogue fusions. It is responsible for implementing the
 `k_tile` loop in the above triply nested loop pseudocode.
 
-EA: I need to better understand what they mean by "mainloop". Is this "BLIS"
-terminology? See section directly below...
-
 ### Collective Mainloops
 
 The `cutlass::gemm::collective::CollectiveMma` class is the primary interface to
@@ -296,6 +293,8 @@ TiledMma::ValTypeB`, allowing TMA or user supplied transform operations to
 perform type conversions.
 
 ### Collective Dispatch Policies
+
+EA: Here we go
 
 `CollectiveMma` implementations are not generic. Instead, they must be
 specialized for each algorithm and GPU architecture. Users can dispatch to a
