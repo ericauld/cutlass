@@ -305,6 +305,7 @@ specialize mainloop implementations and add tuning knobs to them.
 Below is an example of one of the dispatch policies that is used to dispatch to
 a Hopper TMA warp-specialized mainloop implementation:
 
+EA: What do they mean by "n-buffer"?
 ```c++
 // n-buffer in smem (Hopper TMA),
 // pipelined with Hopper GMMA and TMA,
@@ -326,6 +327,8 @@ The `Stages_` template parameter lets the user freely vary the number of
 pipeline stages, while the `ClusterShape_` type allows for parameterization over
 the shape of the threadblock cluster over which TMA multicast will take place.
 
+EA: What are the semantics of a cluster "shape"?
+
 The collective dispatch policy is also the primary point of composing various
 kernel schedules freely with any mainloop. Each mainloop policy either
 prescribes a `Schedule` with which it needs to be run, or exposes a template API
@@ -340,6 +343,7 @@ struct KernelTmaWarpSpecialized { };
 struct KernelTmaWarpSpecializedPingpong { };
 struct KernelTmaWarpSpecializedCooperative { };
 ```
+EA: How can I better understand the content of these?
 
 - A single kernel schedule can support multiple mainloop implementations. For
 example, `KernelMultistage` can be composed with many different mainloop
