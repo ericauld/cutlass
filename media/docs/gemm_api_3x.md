@@ -148,6 +148,8 @@ atoms are tiled." That is, it is the largest number of threads in a grid that
 can cooperate by leveraging hardware features for accelerated communication and
 synchronization. These hardware features include
 
+EA: Can cooperate **by leveraging hardware features**...not sure I get that exactly
+
 * asynchronous array copy (e.g., from global memory to shared memory);
 
 * MMA instructions for small tiles that live in shared memory;
@@ -170,7 +172,7 @@ into shared memory need to let the consumer MMA warp(s) know that their MMA
 inputs are ready. We contrast this with the `kernel::` layer API, which
 schedules the collectives over *independent* tiles in the grid.
 
-EA: This seems important, but I don't understand it
+EA: OK, I think I get this now. But where does a CTA enter the picture?
 
 The Collective API includes both the "mainloop" of matrix multiply-accumulate,
 and the epilogue. This API is the composition point for optimizations such as
