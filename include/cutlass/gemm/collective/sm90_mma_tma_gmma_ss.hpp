@@ -281,6 +281,8 @@ struct CollectiveMma<
     static_assert(cute::is_void_v<SmemCopyAtomB>,
       "SM90 GMMA mainloops cannot have a non-void copy atom for smem sourced instructions.");
 
+    /* EA: Want to understand this. Must have a void copy atom for smem sourced...? */
+
     SharedStorage& storage = *reinterpret_cast<SharedStorage*>(shared_memory);
     Tensor sA = make_tensor(make_smem_ptr(storage.smem_A.data()), SmemLayoutA{});                 // (BLK_M,BLK_K,PIPE)
     Tensor sB = make_tensor(make_smem_ptr(storage.smem_B.data()), SmemLayoutB{});                 // (BLK_N,BLK_K,PIPE)
