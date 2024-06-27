@@ -164,6 +164,11 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
   // Ensure barrier init is complete on all CTAs
   cluster_sync();
 
+  /*
+  EA: I'd really like to have more intuition for when unrolling and forbidding
+  unrolling are useful.
+  */
+
   // Start async loads for all pipes
   CUTE_UNROLL
   for (int pipe = 0; pipe < K_PIPE_MAX; ++pipe)
@@ -210,7 +215,17 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
   //     the SM90 mainloops rely on explicit producer-consumer synchronization
   //     on the purely async instructions TMA and MMA.
   //   More advanced pipeline and warp-specialization strategies are available in CUTLASS mainloops.
-  //
+  
+  /* 
+  EA: cf the mainloop files:
+  - sm90_mma_array_tma_gmma_ss_warpspecialized.hpp
+  - sm90_mma_multistage_gmma_rs_warpspecialized.hpp
+  - sm90_mma_multistage_gmma_ss_warpspecialized.hpp
+  - sm90_mma_tma_gmma_rs_warpspecialized.hpp
+  - sm90_mma_tma_gmma_rs_warpspecialized_mixed_input.hpp
+  - sm90_mma_tma_gmma_ss.hpp
+  - sm90_mma_tma_gmma_ss_warpspecialized.hpp
+  */
 
   // A PipelineState is a circular pipe index [.index()] and a pipe phase [.phase()]
   //   that flips each cycle through K_PIPE_MAX.
