@@ -355,6 +355,9 @@ example, the `MainloopSm90TmaGmmaWarpSpecialized` can be composed with any of
 the `KernelTmaWarpSpecialized`, `KernelTmaWarpSpecializedPingpong` or
 `KernelTmaWarpSpecializedCooperative` kernel schedules.
 
+EA: So "schedules" are one customizable thing at the kernel level...is that all
+the policy provided by the kernel layer?
+
 As [discussed in the CUTLASS 3.0 design documentation](cutlass_3x_design.md),
 adopting tag dispatch policies for our core vocabulary types allows us to
 maintain a single type name for all operations that conceptually belong to the
@@ -376,6 +379,9 @@ implementation parameterized on simple configuration parameters. CUTLASS 3.0
 provides
 [`cutlass::gemm::collective::CollectiveBuilder`](/include/cutlass/gemm/collective/collective_builder.hpp)
 for such scenarios.
+
+EA: Ok, the expert thing is to construct your own `CollectiveMma` directly...the
+easier thing is to use `CollectiveBuilder`
 
 ```c++
 namespace cutlass::gemm::collective {
@@ -401,8 +407,8 @@ struct CollectiveBuilder {
 } // namespace cutlass::gemm::collective
 ```
 
-`CollectiveBuilder` accepts CUTLASS 2.x equivalent input template arguments, and attempts to build
-the best performing `CollectiveMma` from the given parameters.
+`CollectiveBuilder` accepts CUTLASS 2.x equivalent input template arguments, and
+attempts to build the best performing `CollectiveMma` from the given parameters.
 
 - `ArchTag` is one of the SM architectures tags from `cutlass::arch::Sm*`.
 - `OpClass` is one of the operator class tags from `cutlass::arch::Sm*`.
@@ -458,6 +464,8 @@ namespace, because they can be used for computations other than GEMM.
 
 The kernel is "a collection of all clusters in the grid." The kernel layer
 schedules have four main responsibilities.
+
+EA: What? The kernel is all the clusters in the grid?
 
 - Ordering the execution of collectives within the kernel, performing any
   synchronization between that may be necessary
