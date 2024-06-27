@@ -180,6 +180,13 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
       copy(tma_a.with(producer_mbar[pipe]), tAgA(_,k_tile), tAsA(_,pipe));
       copy(tma_b.with(producer_mbar[pipe]), tBgB(_,k_tile), tBsB(_,pipe));
     }
+    /*
+    EA: What does `with` do? Line 132 of copy traits sm90 tma hpp says:
+
+    > Construct an executable SM90_TMA_LOAD with tma_mbar (temp. overloaded for
+    > grouped gemm/ptr array gemm)
+
+     */
     --k_tile_count;
     ++k_tile;
   }
