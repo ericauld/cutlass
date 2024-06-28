@@ -58,6 +58,8 @@ struct SharedStorage
   array_aligned<ElementA, cosize_v<SmemLayoutA>> smem_A;
   array_aligned<ElementB, cosize_v<SmemLayoutB>> smem_B;
 
+  /* EA: I'd like to learn more about array_aligned. */  
+
   uint64_t tma_barrier[size<2>(SmemLayoutA{})];
   uint64_t mma_barrier[size<2>(SmemLayoutA{})];
 };
@@ -76,8 +78,11 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
             TC      * C, CStride dC, TiledMma mma,
             Alpha alpha, Beta beta)
 {
+  /* EA: Note the only stride given is dC */
+
   // Preconditions
   CUTE_STATIC_ASSERT_V(rank(shape_MNK) == Int<3>{});                   // (M, N, K)
+  /* EA: I don't love that they use caps for MNK here */
   CUTE_STATIC_ASSERT_V(rank(cta_tiler) == Int<3>{});                   // (BLK_M, BLK_N, BLK_K)
 
   static_assert(is_static<SmemLayoutA>::value);
@@ -122,6 +127,9 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
   //     Any multicasting must be in conformance with tma_x constructed with make_tma_atom on host.
   //   The group_modes<0,2> transforms the (X,Y,Z)-shaped tensors into ((X,Y),Z)-shaped tensors
   //     with the understanding that the TMA is responsible for everything in mode-0.
+
+  /* EA: Note the above API using mode 0. */
+
   //   The tma_partition reorders and offsets mode-0 according to the tma_x atom and the multicast info.
   //
 
@@ -140,6 +148,9 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
   //
 
   auto K_PIPE_MAX = size<1>(tAsA);
+
+  /* EA: I think this is the same size as the arrays of u int 64 t `producer_mbar` and `consumer_mbar`
+  */
 
   // Total count of tiles
   int k_tile_count = size<1>(tAgA);
