@@ -109,6 +109,10 @@ struct PipelineState {
 
   static constexpr uint32_t Stages = Stages_;
 
+  /* EA: what's the point of having this var be constexpr if the 
+         constructor isn't? Or maybe it is?
+   */
+
   int index_ = 0;
   uint32_t phase_ = 0;
   uint32_t count_ = 0;
