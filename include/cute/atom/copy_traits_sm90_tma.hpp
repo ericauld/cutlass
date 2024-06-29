@@ -1115,6 +1115,9 @@ make_tma_copy_tiled(CopyOp                  const& copy_op,
  * the SMEM "vector" -- the inverse of the smem layout -- to find the largest
  * contiguous array of smem that can be written to/from global memory given
  * the constraints that the TMA instruction imposes.
+
+ EA: this seems important.
+
  *
  * This is accomplished by assigning "basis" strides to the GMEM to track which
  * modes of SMEM map to which modes of GMEM, then reorder the modes of GMEM according
