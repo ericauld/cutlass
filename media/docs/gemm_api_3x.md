@@ -4,6 +4,8 @@
 
 # CUTLASS 3.0 GEMM API
 
+EA: What does the `F` in the above picture represent?
+
 CUTLASS presents a uniform programming model
 for matrix multiply-accumulate (MMA) operations
 at different levels of the GPU system hierarchy.
@@ -41,6 +43,9 @@ for (int cluster_m = 0; cluster_m < GemmM; cluster_m += ClusterTileM) {
 
     // cutlass::gemm::collective::CollectiveMma: mainloop that iterates over all k-tiles
     // No loop unrolling is performed at this stage
+
+    /* EA: I don't understand why the emphasis on "no loop unrolling"... */
+
     for (int k_tile = 0; k_tile < size<2>(gmem_tensor_A); k_tile++) {
 
       // loops inside cute::gemm(tiled_mma, a, b, c); Dispatch 5: (V,M,K) x (V,N,K) => (V,M,N)
@@ -75,10 +80,16 @@ global memory into more "local" memory (like shared memory or registers) and
 computes MMAs. These tiled copy and tiled mma iterations are generally fully
 static and get fully unrolled.
 
+EA: Are they saying "unrolled" in a way that covers e.g. the way a TiledMMA
+    thread-scales a TCO? I would guess yes.
+
 # CUTLASS GEMM Components
 
 CUTLASS expresses the above loop nest with the following components which are
 specialized for data type, layout, and math instruction.
+
+EA: Why single out these three things they're specialized for? Are they saying
+    those are the only levers that don't belong to one of these layers?
 
 | API level            | API Class and/or function names                   |
 | ---                  | ---                                               |
@@ -99,6 +110,10 @@ instantiate them in order to assemble a kernel.  This order is
 
 2. compose them together to build a kernel type, and
 
+EA: "Compose them together to build a kernel type" makes it sound like the
+    kernel is determined by its mainloop and epilogue, which it isn't, or else
+    there would be no actual policy at the kernel layer...
+
 3. wrap up the kernel with a device layer adapter.
 
 This order is also reflected in the [CUTLASS 3.0 Hopper kernel
@@ -116,10 +131,7 @@ using CollectiveMainloop = typename cutlass::gemm::collective::CollectiveBuilder
     cutlass::gemm::collective::StageCountAuto,
     cutlass::gemm::collective::KernelScheduleAuto
   >::CollectiveOp;
-```
-EA: How is this "generating a specialization"? This is just defining a type
-alias, right? Sonnet agrees this will not generate a specialization...
-```c++
+
 // Step 2: Specify the collective layer epilogue type
 using CollectiveEpilogue = cutlass::epilogue::collective::DefaultEpilogue<
     cutlass::gemm::TagToStrideC_t<LayoutC>,
@@ -144,17 +156,26 @@ before redirecting users to CuTe-specific documentation for further details.
 ## Collective API
 
 A Collective is "the largest collection of threads onto which mma atoms and copy
-atoms are tiled." That is, it is the largest number of threads in a grid that
-can cooperate by leveraging hardware features for accelerated communication and
-synchronization. These hardware features include
+atoms are tiled." 
 
-EA: Can cooperate **by leveraging hardware features**...not sure I get that exactly
+EA: I feel they're relying on the word "tiled", but not asking what that
+    connotes, nor whether the thing it connotes is actually true.
+
+That is, it is the largest number of threads in a grid that can cooperate by
+leveraging hardware features for accelerated communication and synchronization.
+These hardware features include
+
+EA: So I guess the coordination between workers occurring in the kernel layer
+    (where there are no data dependencies) does not leverage hardware features.
 
 * asynchronous array copy (e.g., from global memory to shared memory);
 
 * MMA instructions for small tiles that live in shared memory;
 
 * synchronization operations for clusters, thread blocks, and/or warps; and/or
+
+EA: OK, here it sounds like CTAs in the same cluster can cooperate using policy
+    in the collective layer.
 
 * hardware acceleration (such as barriers) for ensuring that data dependencies
   between asynchronous operations are met.
@@ -163,20 +184,30 @@ A Collective uses the `TiledMma` and `TiledCopy` API (see below) to access
 operations that copy and perform MMA on tiles.
 
 Different units of parallelism (e.g., threads, warps, or thread blocks) in a
-Collective might have different roles. For example, in "warp-specialized"
-algorithms, some warps may be responsible for copying data, while others may be
-responsible for computation. Nevertheless, the different units of parallelism
-still need to share data and coordinate access to the shared data. For example,
-the producer warps in a warp-specialized algorithm that copy input matrix tiles
-into shared memory need to let the consumer MMA warp(s) know that their MMA
-inputs are ready. We contrast this with the `kernel::` layer API, which
-schedules the collectives over *independent* tiles in the grid.
+Collective might have different roles. 
 
-EA: OK, I think I get this now. But where does a CTA enter the picture?
+EA: Wait, a collective can span multiple thread blocks? Now I really don't
+understand.
+
+For example, in "warp-specialized" algorithms, some warps may be responsible for
+copying data, while others may be responsible for computation. Nevertheless, the
+different units of parallelism still need to share data and coordinate access to
+the shared data. For example, the producer warps in a warp-specialized algorithm
+that copy input matrix tiles into shared memory need to let the consumer MMA
+warp(s) know that their MMA inputs are ready. We contrast this with the
+`kernel::` layer API, which schedules the collectives over *independent* tiles
+in the grid.
+
+EA: OK, so "a kernel layer policy sees workers as having no data dependencies"
+    is an important thing
 
 The Collective API includes both the "mainloop" of matrix multiply-accumulate,
 and the epilogue. This API is the composition point for optimizations such as
-mainloop fusions and epilogue fusions. It is responsible for implementing the
+mainloop fusions and epilogue fusions. 
+
+EA: What are some examples of these?
+
+It is responsible for implementing theIt is responsible for implementing the
 `k_tile` loop in the above triply nested loop pseudocode.
 
 ### Collective Mainloops
@@ -261,6 +292,10 @@ struct CollectiveMma {
 } // namespace cutlass::gemm::collective
 ```
 
+EA: What's a clever way to distinguish a templated struct's declaration from its
+    various specializations when grepping? Oh, yes, because the declaration
+    uniquely will not have `<...>` after the name of the struct
+
 - `DispatchPolicy` is the most important type for a collective, and is
 [covered in more detail below](#collective-dispatch-policies).
 
@@ -270,11 +305,18 @@ struct CollectiveMma {
   can be a multi-modal hierarchical stride; this would apply if implementing a
   tensor contraction.
 
+EA: [outer, inner, batch], so m and n are both wrapped in outer
+
 - `TiledMma` is an instance of `cute::TiledMma`.
+
+EA: Above and below, ~~instance~~ instantiation
 
 - `GmemTiledCopyA` and `GmemTiledCopyB` are instances of `cute::TiledCopy`
   types. Both tiled operation types are [covered in more detail
   below](#tiled-mma-and-copy).
+
+EA: Below, "the smallest layout that will get tiled over the entire collective's
+    smem". Why "the smallest"? I don't understand.
 
 - `SmemLayoutAtomA` and `SmemLayoutAtomB` are instances of type `cute::Layout`
   and represent the smallest layout that will get tiled over the entire

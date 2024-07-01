@@ -71,6 +71,7 @@ template <class ProblemShape, class CtaTiler,
           class Alpha, class Beta>
 __global__ static
 __launch_bounds__(decltype(size(TiledMma{}))::value)
+/* EA: Recall the first arg of launch bounds is max threads per block */
 void
 gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
             TA const* A, CUTLASS_GRID_CONSTANT TmaA const tma_a,
@@ -101,6 +102,7 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
 
   // Represent the full tensors
   auto [M, N, K] = shape_MNK;
+  /* EA: Again, don't love the caps */
   Tensor mA = tma_a.get_tma_tensor(make_shape(M,K));                   // (M,K) TMA Tensor
   Tensor mB = tma_b.get_tma_tensor(make_shape(N,K));                   // (N,K) TMA Tensor
   Tensor mC = make_tensor(make_gmem_ptr(C), make_shape(M,N), dC);      // (M,N)
@@ -149,9 +151,6 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
 
   auto K_PIPE_MAX = size<1>(tAsA);
 
-  /* EA: I think this is the same size as the arrays of u int 64 t `producer_mbar` and `consumer_mbar`
-  */
-
   // Total count of tiles
   int k_tile_count = size<1>(tAgA);
   // Current tile index in gmem to read from
@@ -159,6 +158,7 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
 
   // Initialize Barriers
   int warp_idx = cutlass::canonical_warp_idx_sync();
+  /* EA: What is `canonical warp idx sync`?*/
   int lane_predicate = cute::elect_one_sync();
   uint64_t* producer_mbar = smem.tma_barrier;
   uint64_t* consumer_mbar = smem.mma_barrier;
@@ -175,11 +175,6 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
   // Ensure barrier init is complete on all CTAs
   cluster_sync();
 
-  /*
-  EA: I'd really like to have more intuition for when unrolling and forbidding
-  unrolling are useful.
-  */
-
   // Start async loads for all pipes
   CUTE_UNROLL
   for (int pipe = 0; pipe < K_PIPE_MAX; ++pipe)
@@ -188,6 +183,7 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
     {
       // Set expected Tx Bytes after each reset / init
       ProducerBarType::arrive_and_expect_tx(&producer_mbar[pipe], kTmaTransactionBytes);
+      /* EA: Recall the producer is a Cluster Transaction Barrier */
       copy(tma_a.with(producer_mbar[pipe]), tAgA(_,k_tile), tAsA(_,pipe));
       copy(tma_b.with(producer_mbar[pipe]), tBgB(_,k_tile), tBsB(_,pipe));
     }
@@ -210,7 +206,10 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
   //   The MMA Descriptor generation is automatic via inspection and validation of the SMEM Layouts.
   //   Because the MMA reads directly from SMEM and the fragments are descriptors rather than registers,
   //     there is no need for copy(tCsA, tCrA) in the mainloop.
-  //
+  
+  /* EA: Oh, OK, I think I get what they mean here; the tCrA and tCrB basically
+         hold references to the smem, so no copying is needed; it just says "go
+         look here" */
 
   ThrMMA thr_mma = mma.get_thread_slice(threadIdx.x);
   Tensor tCsA = thr_mma.partition_A(sA);                               // (MMA,MMA_M,MMA_K,PIPE)
@@ -230,6 +229,12 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
   //
   // TUTORIAL:
   //   Rather than interleaving the stages and instructions like in SM70 and SM80,
+
+  /* EA: Oh, I think I get this now; they're contrasting the queue pattern with
+         a synchronous producer consumer pattern with the same worker, like
+         produce / consume / produce / consume...that's what they mean by
+         "interleaving" */
+
   //     the SM90 mainloops rely on explicit producer-consumer synchronization
   //     on the purely async instructions TMA and MMA.
   //   More advanced pipeline and warp-specialization strategies are available in CUTLASS mainloops.
@@ -250,6 +255,7 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
   auto write_state = cutlass::PipelineState<K_PIPE_MAX>();             // TMA writes
   auto read_state  = cutlass::PipelineState<K_PIPE_MAX>();             // MMA  reads
 
+  /* EA: It seems weird that you'd need to tell it /not/ to unroll */
   CUTE_NO_UNROLL
   while (k_tile_count > -K_PIPE_MAX)
   {
@@ -259,7 +265,14 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
 
     // MMAs to cover 1 K_TILE
     warpgroup_arrive();
+    /* EA: What is this warpgroup_arrive saying? "Go ahead and ________?" */
     gemm(mma, tCrA(_,_,_,read_pipe), tCrB(_,_,_,read_pipe), tCrC);     // (V,M) x (V,N) => (V,M,N)
+                                                            /* EA: Really? No reduction
+                                                                   axis? Seems odd; also
+                                                                   there are three
+                                                                   underscores in the
+                                                                   tensors on the left,
+                                                                   not two */
     warpgroup_commit_batch();
 
     // Wait for all MMAs in a K_TILE to complete
@@ -270,6 +283,7 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
     ++read_state;
 
     if ((warp_idx == 0) && lane_predicate)
+    /* EA: lane_predicate...? */
     {
       int pipe = write_state.index();
       // Wait for Consumer to complete consumption

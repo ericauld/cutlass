@@ -194,14 +194,21 @@ by the partition count.
 
 EA: Where is partitionedK GEMM represented in code?
 
+EA: I still don't understand how one does the reduction with split K... I wish
+they'd give a code pointer. Maybe it would be useful to grep the examples for
+"split"
+
 For example, parameters of m=128, n=128, k=4096 and partition=20
 will result in 20 batched strided GEMMs.
 The first 19 batches will have m=128, n=128, and k=4096/20=204,
 and the last batch will have m=128, n=128, and k=220.
 
 The batched reduction kernel takes as input the output (C) of partitionedK GEMM,
-and performs a reduction along the K-dimension.
-Users must manage workspace memory to store this intermediate result.
+and performs a reduction along the K-dimension. Users must manage workspace
+memory to store this intermediate result.
+
+EA: OK, that's a bit more concrete, at least - I want to look for the "batched
+reduction kernel"
 
 **Sliced K - reduction across warps**
 
@@ -233,6 +240,9 @@ as part of the kernel design. A thread block is partitioned into two sets of war
 Another flavor of Warp-Specialized kernel design being introduced starting with Hopper is the [*Warp-Specialized Persistent Cooperative*](../../include/cutlass/gemm/kernel/sm90_gemm_tma_warpspecialized_cooperative.hpp) kernel. Like the Warp-Specialized kernel, the concepts of warp groups and barrier synchronization between warp groups remain the same in the cooperative design. 
 The distinctive feature of the Warp-Specialized Persistent Cooperative kernel are the following :
 * Persistent thread blocks launched to occupy as many SMs as mentioned in the [KernelHardwareInfo](../../include/cutlass/kernel_hardware_info.hpp) struct. These persistent thread blocks are used to tile the output and thus (potentially) compute multiple output tiles through their lifetime. The main benefit this adds is amortization of the thread-block launch and kernel prologue overheads which are typical of all kernels.
+
+EA: "`KernelHardwareInfo` struct" is interesting.
+
 * Presence of two *consumer* warp groups cooperating on the same output tile by splitting the tile in half across the M dimension. This allows for larger tile sizes to be enabled - since the register pressure per *consumer* warp group is reduced - and hence improving performance.
 
 Since each thread block now computes multiple output tiles, the shape of the grid launch and the scheduling of tiles to the thread blocks is managed using the new [*Tile Scheduler*](../../include/cutlass/gemm/kernel/sm90_tile_scheduler.hpp). The *Tile Scheduler* considers the shape of the *clusters* as well as the available number of available SMs to compute a valid scheduling of the output tiles to launched thread blocks.

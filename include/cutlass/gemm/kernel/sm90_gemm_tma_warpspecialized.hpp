@@ -62,14 +62,14 @@ class GemmUniversal<
   CollectiveEpilogue_,
   TileScheduler_,
   cute::enable_if_t<cute::is_base_of_v<KernelTmaWarpSpecialized, typename CollectiveMainloop_::DispatchPolicy::Schedule>>>
+/* EA: Hmmm...don't understand what this line is up to */
 {
 public:
   //
   // Type Aliases
   //
   using ProblemShape = ProblemShape_;
-  static_assert(cute::rank(ProblemShape{}) == 3 or cute::rank(ProblemShape{}) == 4,
-    "ProblemShape{} should be <M,N,K> or <M,N,K,L>");
+  // static_assert(cute::rank(ProblemShape{}) == 3 or cute::rank(ProblemShape{}) == 4, "ProblemShape{} should be <M,N,K> or <M,N,K,L>");
   // Mainloop derived types
   using CollectiveMainloop = CollectiveMainloop_;
   using TileShape = typename CollectiveMainloop::TileShape;
@@ -105,6 +105,10 @@ public:
   // Kernel level shared memory storage
   struct SharedStorage {
     // Mainloop and epilogue don't use smem concurrently since kernel is non-persistent, so we can use a union
+
+    /* EA: Interesting...if the kernel were "persistent" then mainloop and
+           epilogue would run concurrently
+    */
     union TensorStorage {
       using MainloopTensorStorage = typename CollectiveMainloop::TensorStorage;
       using EpilogueTensorStorage = typename CollectiveEpilogue::TensorStorage;
@@ -293,6 +297,9 @@ public:
 
     // Initialize starting pipeline states for the collectives
     // Epilogue store pipe is producer-only (consumer is TMA unit, waits via scoreboarding)
+
+    /* EA: "scoreboarding"? What's that? */
+    
     typename CollectiveMainloop::PipelineState mainloop_pipe_consumer_state;
     typename CollectiveEpilogue::LoadPipelineState epi_load_pipe_consumer_state;
 
@@ -394,6 +401,7 @@ public:
       Tensor accumulators = partition_fragment_C(tiled_mma, take<0,2>(blk_shape));                 // (MMA,MMA_M,MMA_N)
 
       collective_mainloop.mma(
+/* EA: this `mma` seems to exist only for sm 90 stuff? */        
         mainloop_pipeline,
         mainloop_pipe_consumer_state,
         accumulators,
