@@ -268,12 +268,8 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
     warpgroup_arrive();
     /* EA: What is this warpgroup_arrive saying? "Go ahead and ________?" */
     gemm(mma, tCrA(_,_,_,read_pipe), tCrB(_,_,_,read_pipe), tCrC);     // (V,M) x (V,N) => (V,M,N)
-                                                            /* EA: Really? No reduction
-                                                                   axis? Seems odd; also
-                                                                   there are three
-                                                                   underscores in the
-                                                                   tensors on the left,
-                                                                   not two */
+    /* EA: Really (V,M) x (V,N) => (V,M,N)? No reduction axis? Seems odd; also
+           there are three underscores in the tensors on the left, not two */
     warpgroup_commit_batch();
 
     // Wait for all MMAs in a K_TILE to complete
