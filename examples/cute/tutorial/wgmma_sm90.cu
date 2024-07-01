@@ -82,6 +82,20 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
 {
   /* EA: Note the only stride given is dC */
 
+  /* EA: From the Cuda C++ manual sec 7.29:
+
+  > To perform a bulk tensor asynchronous copy of a multi-dimensional array, the
+  > hardware requires a tensor map. This object describes the layout of the
+  > multi-dimensional array in global and shared memory. A tensor map is created
+  > on the host using the cuTensorMapEncode API. The tensor map is transferred
+  > from host to device as a const kernel parameter annotated with
+  > __grid_constant__, and can be used on the device to copy a tile of data
+  > between shared and global memory. In contrast, performing a
+  > bulk-asynchronous copy of a contiguous one-dimensional array does not
+  > require a tensor map: it can be performed on-device with a pointer and size
+  > parameter.
+  */
+
   // Preconditions
   CUTE_STATIC_ASSERT_V(rank(shape_MNK) == Int<3>{});                   // (M, N, K)
   /* EA: I don't love that they use caps for MNK here */
@@ -134,7 +148,6 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
   /* EA: Note the above API using mode 0. */
 
   //   The tma_partition reorders and offsets mode-0 according to the tma_x atom and the multicast info.
-  //
 
   auto [tAgA, tAsA] = tma_partition(tma_a, Int<0>{}, Layout<_1>{},
                                     group_modes<0,2>(sA), group_modes<0,2>(gA));  // (TMA,k) and (TMA,PIPE)
