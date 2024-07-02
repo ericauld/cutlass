@@ -94,6 +94,9 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
   > bulk-asynchronous copy of a contiguous one-dimensional array does not
   > require a tensor map: it can be performed on-device with a pointer and size
   > parameter.
+
+  EA: I'd like to understand how "tensor map" relates to "TMA descriptor"
+      mentioned e.g. in the gtc24 cutlass talk
   */
 
   // Preconditions
