@@ -36,6 +36,10 @@
 
 # These all have an _INIT version also
 
+# EA: I guess the main thing I'm keeping an eye out for in this file are the
+# usage requirements and things that my CMakeLists.txt in the containing module
+# needs to know about
+
 cmake_minimum_required(VERSION 3.19 FATAL_ERROR)
 cmake_policy(SET CMP0112 NEW)
 
@@ -145,6 +149,8 @@ set(CUTLASS_ENABLE_TESTS ${CUTLASS_ENABLE_TESTS_INIT} CACHE BOOL "Enable CUTLASS
 set(CUTLASS_ENABLE_GTEST_UNIT_TESTS ${CUTLASS_ENABLE_TESTS} CACHE BOOL "Enable CUTLASS GTest-based Unit Tests")
 ################################################################################
 
+# EA: Here we have correspondences between cuda version and compute capability
+
 set(CUTLASS_NVCC_ARCHS_SUPPORTED "")
 if (CUDA_VERSION VERSION_GREATER_EQUAL 11.4 AND NOT CUDA_COMPILER MATCHES "[Cc]lang")
   list(APPEND CUTLASS_NVCC_ARCHS_SUPPORTED 70 72 75 80 86 87)
@@ -174,7 +180,13 @@ if (POLICY CMP0076)
   cmake_policy(SET CMP0076 NEW)
 endif()
 
+# EA: This `GNUInstallDirs` only appears once, here, GitHub copilot suggests
+# it's a CMake module
+
 include(GNUInstallDirs)
+
+# EA: Recall "link directories" tells it where to look for libraries...only
+# static libraries? 
 
 link_directories(${CUDA_TOOLKIT_ROOT_DIR}/lib64/stubs)
 link_directories(${CUDA_TOOLKIT_ROOT_DIR}/lib64)
@@ -227,6 +239,8 @@ endif()
 #
 # CUTLASS NAMESPACE 
 #
+# EA: What do they mean by "namespace" here?
+
 set(CUTLASS_NAMESPACE "cutlass" CACHE STRING "Top level namespace of CUTLASS")
 
 set(CUTLASS_NVCC_EMBED_CUBIN ON CACHE BOOL "Embed compiled CUDA kernel binaries into executables.")
@@ -240,6 +254,9 @@ set(CUTLASS_ENABLE_F16C OFF CACHE BOOL "Enable F16C x86 extensions in host code.
 #
 
 # Kernel unified filter file
+
+# EA: "Kernel filter file", hmmm. Oh, maybe it just determines which kernels the
+# user actually wants to build
 
 set(KERNEL_FILTER_FILE "" CACHE STRING "KERNEL FILTER FILE FULL PATH")
 
