@@ -61,6 +61,9 @@ enum class ReservedNamedBarriers {
 
 class NamedBarrier {
 
+  // EA: Why is there arrive and wait and just arrive but no 
+  // just wait?
+
   // Data Members:
 
   // Range = [1 , NUM_THREADS_PER_CTA]
