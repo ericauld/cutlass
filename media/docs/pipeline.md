@@ -51,34 +51,26 @@ for the following features introduced in Hopper.
 
 ### Asynchronous pipelines
 
-In order to write a performant GEMM Kernel,
-software pipelining is critical to hide the latency of global memory loads.
-(Please refer to the
-[Efficient GEMM](/media/docs/efficient_gemm.md#pipelining) document.)
-Different threads or groups of threads
-may have different roles in the pipeline.
-Some are "producers" that load data or perform computations
-to satisfy other threads' input data dependencies.
-The same or different threads may be "consumers"
-that do other work with those input data dependencies,
-once they are satisfied.
-Starting with the Hopper architecture,
-the presence of hardware-accelerated synchronization instructions
-make it possible for "producer" and "consumer" threads
-to communicate with each other efficiently
-about their data dependencies.
+In order to write a performant GEMM Kernel, software pipelining is critical to
+hide the latency of global memory loads. (Please refer to the [Efficient
+GEMM](/media/docs/efficient_gemm.md#pipelining) document.) Different threads or
+groups of threads may have different roles in the pipeline. Some are "producers"
+that load data or perform computations to satisfy other threads' input data
+dependencies. The same or different threads may be "consumers" that do other
+work with those input data dependencies, once they are satisfied. Starting with
+the Hopper architecture, the presence of hardware-accelerated synchronization
+instructions make it possible for "producer" and "consumer" threads to
+communicate with each other efficiently about their data dependencies.
 
-Implementing a persistent GEMM algorithm calls for managing
-dozens of different kinds of asynchronously executing operations
-that synchronize using multiple barriers organized as a circular list.
-This complexity is too much for human programmers to manage by hand.
-As a result, we have developed
-[asynchronous Pipeline classes](/include/cutlass/pipeline/).
-These classes help developers orchestrate a pipeline
-of asynchronous producer and consumer threads,
-without needing to worry about lower-level hardware details.
-These classes serve a similar function as the various
-[pipeline abstractions](https://nvidia.github.io/libcudacxx/extended_api/synchronization_primitives/pipeline.html)
+Implementing a persistent GEMM algorithm calls for managing dozens of different
+kinds of asynchronously executing operations that synchronize using multiple
+barriers organized as a circular list. This complexity is too much for human
+programmers to manage by hand. As a result, we have developed [asynchronous
+Pipeline classes](/include/cutlass/pipeline/). These classes help developers
+orchestrate a pipeline of asynchronous producer and consumer threads, without
+needing to worry about lower-level hardware details. These classes serve a
+similar function as the various [pipeline
+abstractions](https://nvidia.github.io/libcudacxx/extended_api/synchronization_primitives/pipeline.html)
 in libcu++.
 
 #### Pipeline methods 
@@ -89,12 +81,19 @@ The `producer_acquire` method is to be used by asynchronous producer threads
 before issuing other instructions associated with a particular pipeline stage
 (e.g., copy or write).
 
-This is a blocking instruction
-which blocks further execution of consumer threads
-unless the particular stage waiting to be acquired
-is released by a consumer.
+This is a blocking instruction which blocks further execution of consumer
+threads unless the particular stage waiting to be acquired is released by a
+consumer.
 
-We say that a pipeline at its start is "empty" if producer threads are free to produce and do not need to wait for a consumer release -- that is, if an acquire operation is expected to succeed.  If the pipeline at its start is empty, then we can either skip performing producer acquire operations during the first pass through the pipeline stages, or use the `make_producer_start_state` method.  The latter ensures that the acquire operation will succeed at the start of a pipeline.
+EA: So the kind of thing you acquire / release is a "stage"?
+
+We say that a pipeline at its start is "empty" if producer threads are free to
+produce and do not need to wait for a consumer release -- that is, if an acquire
+operation is expected to succeed.  If the pipeline at its start is empty, then
+we can either skip performing producer acquire operations during the first pass
+through the pipeline stages, or use the `make_producer_start_state` method.  The
+latter ensures that the acquire operation will succeed at the start of a
+pipeline.
 
 ##### Producer commit
 
