@@ -200,6 +200,9 @@ PipelineState<Pipeline::Stages> make_producer_start_state() {
   return {InitialProducerStage, InitialProducerPhase, InitialProducerCount};
 }
 
+// EA: If this is the producer class, I was half-expecting to see
+// a corresponding consumer class below, but I don't
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // TMA load (producer) Async Pipeline class
