@@ -445,10 +445,23 @@ make_fragment_like(Tensor<Engine,Layout> const& tensor)
   return make_fragment_like<typename Engine::value_type>(tensor.layout());
 }
 
-//
-// make_counting_tensor
-//   Make a tensor from a layout by binding it to a counting iter with 0-offset of the same profile as the codomain.
-//
+// make_counting_tensor 
+
+// Make a tensor from a layout by binding it to a counting iter with 0-offset of
+// the same profile as the codomain.
+
+/* EA: So I'd have thought this would be a debugging thing, but it's used in a
+   pretty important method:
+   
+   // Generate the TMA coord tensor
+   template <class GShape>
+   CUTE_HOST_DEVICE constexpr
+   auto
+   get_tma_tensor(GShape const& g_shape) const {
+     static_assert(is_congruent<decltype(g_shape), decltype(aux_params_.g_stride_)>::value);
+     return make_counting_tensor(make_layout(g_shape, aux_params_.g_stride_));
+   }
+*/
 
 template <class Layout, __CUTE_REQUIRES(is_layout<Layout>::value)>
 CUTE_HOST_DEVICE constexpr

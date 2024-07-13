@@ -96,6 +96,12 @@ struct TMA_LOAD_Unpack
 
 struct SM90_TMA_LOAD_OP : SM90_TMA_LOAD {};
 
+// EA: make tma copy: I guess think of this as an analog of `make tiled
+// copy`...and it does return a `Copy_Atom`, but instead of taking "brigade
+// parameters" it takes a gmem /tensor/ and an smem /layout/. Its overloads are
+// at line 1209 of this file. Then the Copy_Atom that comes out has the
+// important method below `get tma tensor`.
+
 // The non-executable SM90_TMA_LOAD with tma_desc and no tma_mbar
 // Use .with(tma_mbar) to construct an executable version
 template <class NumBitsPerTMA, class AuxParams_>
@@ -136,6 +142,23 @@ struct Copy_Traits<SM90_TMA_LOAD, NumBitsPerTMA, AuxParams_>
     // We accept multicast_mask here to keep the API for both atoms consistent
     return {{}, {new_tma_desc, &tma_mbar}};
   }
+
+/* EA: Colfax example:
+   (Host)
+     auto tma_load = make_tma_copy(SM90_TMA_LOAD{}, gmem_tensor, smem_layout);
+   (Device) 
+     if (threadIdx.x == 0) {
+         auto gmem_tensor_coord = tma_load.get_tma_tensor(shape(gmem_tensor));
+      
+         auto gmem_tensor_coord_cta = local_tile(
+             gmem_tensor_coord,
+             Tile<Int<CTA_M>, Int<CTA_N>>{},
+             make_coord(blockIdx.x, blockIdx.y));
+        // ...
+     }
+
+   Note how get tma tensor (below) looks at `aux_params_`
+*/
 
   // Generate the TMA coord tensor
   template <class GShape>
