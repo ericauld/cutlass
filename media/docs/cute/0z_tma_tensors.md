@@ -35,6 +35,13 @@ packed representation of a multidimensional tensor in global memory with 1, 2,
 * other flags representing the smem box size, smem swizzling patterns, and
   out-of-bounds access behavior.
 
+EA: "Box size"?
+
+EA: OK, so that makes sense why it differs from ordinary Tiled Copy in the way
+it's constructed, and also why it needs that other storage specifier
+`__grid_constant__`, because it needs to go (identically) to possibly multiple
+CTAs in the grid.
+
 This descriptor must be created on the host before kernel execution. It is
 shared between all thread blocks that will be issuing TMA instructions. Once
 inside the kernel, the TMA is executed with the following parameters:
