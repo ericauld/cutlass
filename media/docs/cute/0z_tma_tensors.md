@@ -13,6 +13,26 @@ more advanced features of CuTe.
 
 # Introduction to TMA instructions
 
+EA: Also from Hopper Tuning Guide: 
+
+> TMA has several advantages:
+>
+> - Avoids using registers for moving data between the different memory spaces.
+> 
+> - Avoids using SM instructions for moving data: a single thread can issue large
+>   data movement instructions to the TMA unit. The whole block can then continue
+>   working on other instructions while the data is in flight and only wait for
+>   the data to be consumed when actually necessary.
+> 
+> - Enables users to write warp specialized codes, where specific warps specialize
+>   on data movement between the different memory spaces while other warps only
+>   work on local data within the SM."
+
+EA: Why is that latter one enabled by TMA? I don't understand the logical
+connection. Maybe a better way to think about it is that it's enabled by the
+/asynchronous barrier/. (Note abar's have been around since Ampere, but atbar's
+are new in Hopper.)
+
 The Tensor Memory Accelerator (TMA) is a set of instructions for copying
 possibly multidimensional arrays between global and shared memory.  TMA was
 introduced in the Hopper architecture.  A single TMA instruction can copy an
@@ -73,6 +93,9 @@ that is defined in the TMA descriptor.
 
 That means that an ordinary CuTe Tensor that stores a GMEM pointer and computes
 offsets and new GMEM pointers is useless to the TMA.
+
+EA: That's really interesting...I'm not sure I understand the logical connection
+between the TMA's features and 
 
 What do we do?
 
