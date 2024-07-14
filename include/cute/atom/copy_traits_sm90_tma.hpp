@@ -156,9 +156,8 @@ struct Copy_Traits<SM90_TMA_LOAD, NumBitsPerTMA, AuxParams_>
              make_coord(blockIdx.x, blockIdx.y));
         // ...
      }
-
-   Note how get tma tensor (below) looks at `aux_params_`
 */
+// Note how get tma tensor (source below, used above) looks at `aux_params_`
 
   // Generate the TMA coord tensor
   template <class GShape>
