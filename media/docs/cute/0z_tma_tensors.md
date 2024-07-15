@@ -24,11 +24,11 @@ EA: Also from Hopper Tuning Guide:
 >   working on other instructions while the data is in flight and only wait for
 >   the data to be consumed when actually necessary.
 
-EA: I don't understand this one really...I understand that asynchrony is nice when
-you want to hide memory latencies because if your loads / stores are
+EA: I don't understand this one really...I understand that asynchrony is nice
+when you want to hide memory latencies because if your loads / stores are
 synchronous, you have this time when the number of threads actually doing work
 is suddenly different, and you'd need to plan for that by starting with more
-threads, wasteful and a hassle. Maybe that's what they're driving at.
+threads -- wasteful and a hassle. Maybe that's what they're driving at.
  
 > - Enables users to write warp specialized codes, where specific warps specialize
 >   on data movement between the different memory spaces while other warps only
