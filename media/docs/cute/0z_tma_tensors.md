@@ -34,10 +34,7 @@ threads, wasteful and a hassle. Maybe that's what they're driving at.
 >   on data movement between the different memory spaces while other warps only
 >   work on local data within the SM."
 
-EA: Why is that latter one enabled by TMA? I don't understand the logical
-connection. Maybe a better way to think about it is that it's enabled by the
-/asynchronous barrier/. (Note abar's have been around since Ampere, but atbar's
-are new in Hopper.)
+EA: Why is that enabled by TMA?
 
 The Tensor Memory Accelerator (TMA) is a set of instructions for copying
 possibly multidimensional arrays between global and shared memory.  TMA was
