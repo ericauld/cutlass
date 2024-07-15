@@ -62,7 +62,8 @@ packed representation of a multidimensional tensor in global memory with 1, 2,
 * other flags representing the smem box size, smem swizzling patterns, and
   out-of-bounds access behavior.
 
-EA: "Box size"?
+EA: "Box size"? Maybe this means the longest sequence of adjacent elements that
+is actually contiguous in memory?
 
 EA: OK, so that makes sense why it differs from ordinary Tiled Copy in the way
 it's constructed, and also why it needs that other storage specifier
