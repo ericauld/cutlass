@@ -34,7 +34,11 @@ those threads are idle at first -- a hassle.
 >   on data movement between the different memory spaces while other warps only
 >   work on local data within the SM."
 
-EA: Why is that enabled by TMA?
+EA: Why is that enabled by TMA? Maybe it's the same principle as in the last
+bullet...assigning (only) one warp to doing data copying in the synchronous case
+would mean there could be no overlapping loads...to get overlapping loads, you'd
+have to have multiple warps waiting on their loads to finish while still other
+warps did a bunch of work in their shadow...messy.
 
 The Tensor Memory Accelerator (TMA) is a set of instructions for copying
 possibly multidimensional arrays between global and shared memory.  TMA was
