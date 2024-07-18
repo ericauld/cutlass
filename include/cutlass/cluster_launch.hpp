@@ -125,6 +125,9 @@ struct ClusterLauncher {
   }
 
   // This is the method we expect to use going forward
+
+  // EA: So how would I summarize what the point of this is? I guess the main
+  // thing is cuda Launch Kernel Ex C
   static inline CUTLASS_HOST
   Status launch(
       dim3 const grid_dims,
@@ -153,6 +156,7 @@ struct ClusterLauncher {
     launch_config.stream = cuda_stream;
 
     cudaLaunchAttribute launch_attribute[1];
+    // EA: Weird, why do this?
     launch_attribute[0].id = cudaLaunchAttributeClusterDimension;
     launch_attribute[0].val.clusterDim.x = cluster_dims.x;
     launch_attribute[0].val.clusterDim.y = cluster_dims.y;
@@ -167,6 +171,19 @@ struct ClusterLauncher {
         "(" << cluster_dims.x << ", " << cluster_dims.y << ", " << cluster_dims.z << ")\n");
 
     cudaError_t status = cudaLaunchKernelExC(&launch_config, kernel, kernel_params);
+    // EA: Note cuda Launch Kernel Ex C is part of the Runtime API...why do they
+    // need to go so low-level here? Is the launch config somehow expressing
+    // something you can't with ordinary kernel invocation? Oh, yes, I guess
+    // launch attributes are the thing that's different...NB the type of launch
+    // config is `cuda Launch Config t`, and it has members
+    /*
+      cudaLaunchAttribute * attrs
+      dim3  blockDim
+      size_t  dynamicSmemBytes
+      dim3  gridDim
+      unsigned int  numAttrs
+      cudaStream_t stream
+    */
     Return_Status(status);
 #else
     CUTLASS_TRACE_HOST("ClusterLauncher: CUTLASS_SM90_CLUSTER_LAUNCH_ENABLED not defined! Aborting cluster launch.");
