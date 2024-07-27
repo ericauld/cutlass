@@ -125,9 +125,8 @@ struct ClusterLauncher {
   }
 
   // This is the method we expect to use going forward
+  // EA: Meaning "...instead of `launch kernel on cluster`"?
 
-  // EA: So how would I summarize what the point of this is? I guess the main
-  // thing is cuda Launch Kernel Ex C
   static inline CUTLASS_HOST
   Status launch(
       dim3 const grid_dims,
@@ -156,7 +155,6 @@ struct ClusterLauncher {
     launch_config.stream = cuda_stream;
 
     cudaLaunchAttribute launch_attribute[1];
-    // EA: Weird, why do this?
     launch_attribute[0].id = cudaLaunchAttributeClusterDimension;
     launch_attribute[0].val.clusterDim.x = cluster_dims.x;
     launch_attribute[0].val.clusterDim.y = cluster_dims.y;
@@ -171,11 +169,8 @@ struct ClusterLauncher {
         "(" << cluster_dims.x << ", " << cluster_dims.y << ", " << cluster_dims.z << ")\n");
 
     cudaError_t status = cudaLaunchKernelExC(&launch_config, kernel, kernel_params);
-    // EA: Note cuda Launch Kernel Ex C is part of the Runtime API...why do they
-    // need to go so low-level here? Is the launch config somehow expressing
-    // something you can't with ordinary kernel invocation? Oh, yes, I guess
-    // launch attributes are the thing that's different...NB the type of launch
-    // config is `cuda Launch Config t`, and it has members
+    // EA: NB `cuda Launch Kernel Ex C` is part of the Runtime API...the type of
+    // launch config is `cuda Launch Config t`, and it has members
     /*
       cudaLaunchAttribute * attrs
       dim3  blockDim
@@ -183,6 +178,11 @@ struct ClusterLauncher {
       dim3  gridDim
       unsigned int  numAttrs
       cudaStream_t stream
+    */
+    // and `cuda Launch Attribute` has members
+    /*
+      cudaLaunchAttributeID id
+      union cudaLaunchAttributeValue 	val
     */
     Return_Status(status);
 #else
@@ -250,6 +250,9 @@ struct ClusterLaunchParams {
 ///   {grid_dims, block_dims, cluster_dims, sizeof(SharedMemory)},
 ///   kernel_ptr, x, y, z);
 /// @endcode
+
+// EA: OK, so this is basically like "we wish we'd included cluster dims in the
+// excon API way back when, but we didn't, so now we need to apply it manually as a `cuda Launch Attribute` "
 template<class ... Args>
 CUTLASS_HOST cutlass::Status
 launch_kernel_on_cluster(const ClusterLaunchParams& params,

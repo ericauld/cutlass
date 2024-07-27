@@ -268,6 +268,7 @@ struct SM90_TMA_LOAD_5D
 
 struct SM90_TMA_LOAD
 {
+  // EA: Boy, what a pain...really no better way to do this?
   CUTE_HOST_DEVICE static void
   copy(void const* desc_ptr, uint64_t* mbar_ptr,
        void      * smem_ptr,
@@ -304,6 +305,7 @@ struct SM90_TMA_LOAD
     return SM90_TMA_LOAD_5D::copy(desc_ptr, mbar_ptr, smem_ptr, crd0, crd1, crd2, crd3, crd4);
   }
 
+  // EA: Still want to better understand the point of "prefetching"
   struct PREFETCH
   {
     CUTE_HOST_DEVICE static void

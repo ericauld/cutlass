@@ -61,8 +61,11 @@ enum class ReservedNamedBarriers {
 
 class NamedBarrier {
 
-  // EA: Why is there arrive and wait and just arrive but no 
-  // just wait?
+  // EA: Why is there arrive and wait and just arrive but no just wait? 
+  // EA: Not sure if this is why, but in PTX sec 9.7.12.15 on mbarrier it says,
+  // "As noted in mbarrier support with shared memory, threads can perform only
+  // arrive operations but not *_wait on an mbarrier located in shared::cluster
+  // space."
 
   // Data Members:
 
@@ -188,6 +191,9 @@ class NamedBarrier {
 // Hopper introduces a new cluster-wide barrier which handle with Cluster-wide arrive-wait behaviour.
 // This is an extension to the Ampere arrive-wait barriers
 // Note : Ampere arrive-wait Barriers have a larger max-arrive count (2^30) than Hopper arrive-wait Barriers (2^20).
+
+// EA: I wish this were a little more clear...where does the Ampere one live,
+// precisely how is it an "extension"?
 struct ClusterBarrier {
 
   using ValueType = uint64_t;
