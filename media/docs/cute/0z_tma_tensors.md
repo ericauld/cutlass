@@ -23,15 +23,22 @@ EA: Also from Hopper Tuning Guide:
 >   data movement instructions to the TMA unit. The whole block can then continue
 >   working on other instructions while the data is in flight and only wait for
 >   the data to be consumed when actually necessary.
-> 
+
+EA: I'd put this as: asynchrony is nice when you want to do a lot of work in the
+shadow of a memory latency, bcs if your loads / stores are synchronous, you have
+this time when the number of threads actually doing work is suddenly different,
+and you need to anticipate that and start with maybe extra threads, but then
+those threads are idle at first -- a hassle.
+ 
 > - Enables users to write warp specialized codes, where specific warps specialize
 >   on data movement between the different memory spaces while other warps only
 >   work on local data within the SM."
 
-EA: Why is that latter one enabled by TMA? I don't understand the logical
-connection. Maybe a better way to think about it is that it's enabled by the
-/asynchronous barrier/. (Note abar's have been around since Ampere, but atbar's
-are new in Hopper.)
+EA: Why is that enabled by TMA? Maybe it's the same principle as in the last
+bullet...assigning (only) one warp to doing data copying in the synchronous case
+would mean there could be no overlapping loads...to get overlapping loads, you'd
+have to have multiple warps waiting on their loads to finish while still other
+warps did a bunch of work in their shadow...messy.
 
 The Tensor Memory Accelerator (TMA) is a set of instructions for copying
 possibly multidimensional arrays between global and shared memory.  TMA was
@@ -55,7 +62,8 @@ packed representation of a multidimensional tensor in global memory with 1, 2,
 * other flags representing the smem box size, smem swizzling patterns, and
   out-of-bounds access behavior.
 
-EA: "Box size"?
+EA: "Box size"? Maybe this means the longest sequence of adjacent elements that
+is actually contiguous in memory?
 
 EA: OK, so that makes sense why it differs from ordinary Tiled Copy in the way
 it's constructed, and also why it needs that other storage specifier
