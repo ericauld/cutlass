@@ -31,6 +31,7 @@
 #pragma once
 
 #include <cute/config.hpp>
+// EA: Oh, cute/config.hpp, that's a new header to me
 
 #include <cute/arch/copy.hpp>
 #include <cute/arch/copy_sm90.hpp>
@@ -1301,6 +1302,9 @@ struct SM90_TMA_REDUCE_ADD
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /// BULK_COPY : Copy a bulk of memory between shared memory and global memory
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// EA: Why do these ones use a newline at the end of the template (a single-line
+// template), but the others don't? Just a stylistic choice?
 
 struct SM90_BULK_COPY_G2S
 {
