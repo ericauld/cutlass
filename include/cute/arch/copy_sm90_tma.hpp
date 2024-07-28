@@ -1129,6 +1129,9 @@ tma_store_arrive() {
 }
 
 // Wait until at most Count committed TMA_STOREs are pending and all prior commits are complete
+
+// EA: If I understand correctly, it does care which ones are pending, like if
+// they finished out of order, it couldn't take advantage of that fact
 template <int Count>
 CUTE_HOST_DEVICE static void
 tma_store_wait() {
