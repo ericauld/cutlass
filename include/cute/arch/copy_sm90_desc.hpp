@@ -69,6 +69,15 @@ initialize_barrier(uint64_t& smem_barrier,                 // 64 bits user-mange
 }
 
 // Set the number of bytes transfered per transaction and perform an arrive operation as well
+
+/* EA: So they're saying `expect_tx` itself performs an arrive operation? I
+   don't see any evidence of this in the ptx manual, for instance sec
+   9.7.12.15.5.1 expect-tx operation sec 9.7.12.15.11 mbarrier.expect_tx
+
+   NB the Colfax article repeats this, saying that
+   `set_barrier_transaction_bytes` "performs an arrive-on operation and sets the
+   expected transaction count"
+*/
 CUTE_HOST_DEVICE
 void
 set_barrier_transaction_bytes(uint64_t& smem_barrier,      // 64 bits user-manged barrier in smem
