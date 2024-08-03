@@ -202,11 +202,13 @@ struct Copy_Traits<SM90_TMA_LOAD_OP, NumBitsPerTMA>
   uint64_t*, // smem mbarrier
   uint64_t   // cache hint
   > const opargs_;
+  // EA: Oh, here's that opargs_ thing, I'd been wondering about that
 };
 
 // The prefetch for SM90_TMA_LOAD with tma_desc
 template <class NumBitsPerTMA, class... Args>
 struct Copy_Traits<SM90_TMA_LOAD::PREFETCH, NumBitsPerTMA, Args...>
+// EA: The `Args...` don't seem to be used
      : TMA_LOAD_Unpack<SM90_TMA_LOAD::PREFETCH>
 {
   using ThrID     = Layout<_1>;
