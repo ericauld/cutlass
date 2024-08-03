@@ -74,7 +74,8 @@ template <class ProblemShape, class CtaTiler,
 __global__ static
 __launch_bounds__(decltype(size(TiledMma{}))::value)
 /* EA: Recall the first arg of launch bounds is max threads per block. Also the
-       `size` of a Tiled MMA is MNK, not the number of threads, right? */
+       `size` of a Tiled MMA is MNK, not the number of threads, right? Must not
+       be*/
 void
 gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
             TA const* A, CUTLASS_GRID_CONSTANT TmaA const tma_a,
@@ -202,10 +203,6 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
   //   Because the MMA reads directly from SMEM and the fragments are descriptors rather than registers,
   //     there is no need for copy(tCsA, tCrA) in the mainloop.
   
-  /* EA: Oh, OK, I think I get what they mean here; the tCrA and tCrB basically
-         hold references to the smem, so no copying is needed; it just says "go
-         look here" */
-
   ThrMMA thr_mma = mma.get_thread_slice(threadIdx.x);
   Tensor tCsA = thr_mma.partition_A(sA);                               // (MMA,MMA_M,MMA_K,PIPE)
   Tensor tCsB = thr_mma.partition_B(sB);                               // (MMA,MMA_N,MMA_K,PIPE)
@@ -254,7 +251,6 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
 
     // MMAs to cover 1 K_TILE
     warpgroup_arrive();
-    /* EA: What is this warpgroup_arrive saying? "Go ahead and ________?" */
     gemm(mma, tCrA(_,_,_,read_pipe), tCrB(_,_,_,read_pipe), tCrC);     // (V,M) x (V,N) => (V,M,N)
     /* EA: Really (V,M) x (V,N) => (V,M,N)? No reduction axis? Seems odd; also
            there are three underscores in the tensors on the left, not two */
