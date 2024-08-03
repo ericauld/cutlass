@@ -112,6 +112,7 @@ struct SM90_TMA_LOAD_OP : SM90_TMA_LOAD {};
 // The non-executable SM90_TMA_LOAD with tma_desc and no tma_mbar
 // Use .with(tma_mbar) to construct an executable version
 template <class NumBitsPerTMA, class AuxParams_>
+// EA: What does the "...PerTMA" part mean?
 struct Copy_Traits<SM90_TMA_LOAD, NumBitsPerTMA, AuxParams_>
 {
   using ThrID     = Layout<_1>;
