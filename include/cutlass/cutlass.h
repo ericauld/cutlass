@@ -100,6 +100,7 @@ static const int NumThreadsPerQuadPair = NumThreadsPerQuad * 2;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+
 /// Helper function to return true when called by thread 0 of threadblock 0.
 CUTLASS_HOST_DEVICE bool thread0() {
   #if defined(__CUDA_ARCH__)
@@ -108,6 +109,9 @@ CUTLASS_HOST_DEVICE bool thread0() {
     return false;
   #endif
 }
+
+/* EA: Why make these __device__ but then check if __CUDA_ARCH__ is defined?
+*/
 
 /// Returns a lane index in the warp. The threads in warp may not be convergent
 CUTLASS_DEVICE
