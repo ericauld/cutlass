@@ -333,8 +333,8 @@ gemm_nt(int m, int n, int k,
   Tensor mB = make_tensor(B, make_shape(N,K), dB);
 
   // Create TMA Atoms with the desired copy operation on the source and destination
-  Copy_Atom tmaA = make_tma_atom(SM90_TMA_LOAD{}, mA, sA(_,_,0), make_shape(bM,bK), Int<1>{});
-  Copy_Atom tmaB = make_tma_atom(SM90_TMA_LOAD{}, mB, sB(_,_,0), make_shape(bN,bK), Int<1>{});
+  Copy_Atom tmaA = make_tma_atom(SM90_TMA_LOAD{}, mA, sA(_,_,0), make_shape(bM,bK));
+  Copy_Atom tmaB = make_tma_atom(SM90_TMA_LOAD{}, mB, sB(_,_,0), make_shape(bN,bK));
 
   //
   // Setup and Launch
@@ -417,8 +417,8 @@ gemm_tn(int m, int n, int k,
   Tensor mB = make_tensor(B, make_shape(N,K), dB);
 
   // Create TMA Atoms with the desired copy operation on the source and destination
-  Copy_Atom tmaA = make_tma_atom(SM90_TMA_LOAD{}, mA, sA(_,_,0), make_shape(bM,bK), Int<1>{});
-  Copy_Atom tmaB = make_tma_atom(SM90_TMA_LOAD{}, mB, sB(_,_,0), make_shape(bN,bK), Int<1>{});
+  Copy_Atom tmaA = make_tma_atom(SM90_TMA_LOAD{}, mA, sA(_,_,0), make_shape(bM,bK));
+  Copy_Atom tmaB = make_tma_atom(SM90_TMA_LOAD{}, mB, sB(_,_,0), make_shape(bN,bK));
 
   //
   // Setup and Launch

@@ -57,5 +57,3 @@ cutlass_example_add_executable(
   wgmma_sm90
   wgmma_sm90.cu
 )
-
-target_compile_options(wgmma_sm90 PRIVATE -ptx -src-in-ptx)
