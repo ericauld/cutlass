@@ -1100,7 +1100,8 @@ make_tma_copy_desc(Tensor<GEngine,GLayout> const& gtensor,         // The origin
     auto si = basis_get(ei,  shape(gmem_layout));
     auto di = basis_get(ei, stride(gmem_layout));
     if constexpr (is_constant<1, decltype(si)>::value || is_constant<0, decltype(di)>::value) {
-      return Int<0>{};                  // If size-1 or stride-0, return arithmetic identity -- no contribution to the TMA
+      return Int<0>{};                  
+      // If size-1 or stride-0, return arithmetic identity -- no contribution to the TMA
     } else {
       auto tma_gmem_basis_stride = stride(tma_gbasis);
       // Find j such that E<i> is in stride<j>(tma_gbasis)
@@ -1109,7 +1110,8 @@ make_tma_copy_desc(Tensor<GEngine,GLayout> const& gtensor,         // The origin
         return any_of(tma_stride_j, [&](auto dj) { return dj == EI{}; }); 
         });
       if constexpr (decltype(j == rank(tma_gmem_basis_stride))::value) {
-        return Int<0>{};               // If not-found, return arithmetic identity -- no contribution to the TMA
+        return Int<0>{};               
+        // If not-found, return arithmetic identity -- no contribution to the TMA
       } else
       if constexpr (decltype(j == Int<0>{})::value) {
         auto scale = recast_ratio * basis_get(ei, stride(gtensor));
@@ -1353,7 +1355,8 @@ make_tma_copy(CopyOp                  const& copy_op,
     auto cta_v_tile = make_identity_layout(shape(gtensor)).compose(cta_tiler);
     auto cta_t_tile = make_layout(cluster_size);
     // Prefer TmaInternalType if specified. Fallback to GEngine::value_type
-    using TmaType = conditional_t<is_same<void, TmaInternalType>::value, typename GEngine::value_type, TmaInternalType>;
+    using TmaType = conditional_t<is_same<void, TmaInternalType>::value, 
+                                  typename GEngine::value_type, TmaInternalType>;
     return detail::make_tma_copy_tiled<TmaType>(copy_op,
                                                 gtensor, slayout,
                                                 cta_t_tile, cta_v_tile);
@@ -1370,7 +1373,8 @@ make_tma_copy(CopyOp                  const& copy_op,
               Tensor<GEngine,GLayout> const& gtensor,
               SLayout                 const& slayout)
 {
-  return make_tma_copy(copy_op, gtensor, slayout, product_each(shape(slayout)), Int<1>{});
+  return make_tma_copy(copy_op, gtensor, slayout, 
+                       product_each(shape(slayout)), Int<1>{});
 }
 
 // Explicit defaulting
@@ -1385,7 +1389,8 @@ make_tma_copy(CopyOp                  const& copy_op,
               SLayout                 const& slayout,
               Cluster_Size            const& cluster_size)
 {
-  return make_tma_copy(copy_op, gtensor, slayout, product_each(shape(slayout)), cluster_size);
+  return make_tma_copy(copy_op, gtensor, slayout, 
+                       product_each(shape(slayout)), cluster_size);
 }
 
 ////////////////////////////////////
@@ -1408,7 +1413,8 @@ make_tma_atom(CopyOp                  const& copy_op,
 {
   auto cta_v_tile = make_identity_layout(shape(gtensor)).compose(cta_tiler);
   // Prefer TmaInternalType if specified. Fallback to GEngine::value_type
-  using TmaType = conditional_t<is_same<void, TmaInternalType>::value, typename GEngine::value_type, TmaInternalType>;
+  using TmaType = conditional_t<is_same<void, TmaInternalType>::value, 
+                                typename GEngine::value_type, TmaInternalType>;
   return detail::make_tma_copy_atom<TmaType>(copy_op,
                                              gtensor, slayout,
                                              size(cluster_size), cta_v_tile);
