@@ -45,12 +45,15 @@
 namespace cute
 {
 
-/* EA: Interesting things here: 
-   - tma_partition
-   Interesting things mentioned here
-   - Swizzle<B, M, S>
-   - Tma "box shape" (what's this?)
- */
+// EA: Interesting things here: 
+//   - tma_partition
+//   Interesting things mentioned here
+//   - Swizzle<B, M, S>
+//   - Tma "box shape" (what's this?)
+
+// EA: Maybe you could argue this source code is slightly less (important,
+// primary) than atom / mma_traits_sm90_gmma.hpp, since this is also exposed in
+// ordinary Cuda C++ outside Cutlass, but that one isn't
 
 template <class GmemTmaBasisStrides_, class TmaGmemBasis_, class TmaSwizzle_>
 struct AuxTmaParams {
@@ -75,6 +78,8 @@ struct TMA_LOAD_Unpack
               Tensor<TD,DLayout>                & dst)
   {
     auto src_coord = src.data().coord_;
+    // EA: The above line is interesting to me...what kind of tensor has a
+    // `coord_` field?
     if constexpr (detail::is_prefetch<CopyOp>) {
       return detail::explode_tuple(detail::CallCOPY<CopyOp>{},
                                    traits.opargs_, tuple_seq<decltype(traits.opargs_)>{},
@@ -103,11 +108,11 @@ struct TMA_LOAD_Unpack
 
 struct SM90_TMA_LOAD_OP : SM90_TMA_LOAD {};
 
-// EA: make tma copy: I guess think of this as an analog of `make tiled
-// copy`...and it does return a `Copy_Atom`, but instead of taking "brigade
-// parameters" it takes a gmem /tensor/ and an smem /layout/. Its overloads are
-// at line 1209 of this file. Then the Copy_Atom that comes out has the
-// important method below `get tma tensor`.
+// EA: make_tma_copy: I guess think of this as an analog of
+// `make_tiled_copy`...and it does return a `Copy_Atom`, but instead of taking
+// "brigade parameters" it takes a gmem *tensor* and an smem *layout*. Its
+// overloads are at line 1209 of this file. Then the Copy_Atom that comes out
+// has the important method below `get_tma_tensor`.
 
 // The non-executable SM90_TMA_LOAD with tma_desc and no tma_mbar
 // Use .with(tma_mbar) to construct an executable version
@@ -135,11 +140,14 @@ struct Copy_Traits<SM90_TMA_LOAD, NumBitsPerTMA, AuxParams_>
     return &tma_desc_;
   }
 
-  /* EA: Where's the constructor? */
+  // EA: No constructor
 
   // Construct an executable SM90_TMA_LOAD with tma_mbar
   CUTE_HOST_DEVICE constexpr
   Copy_Traits<SM90_TMA_LOAD_OP, NumBitsPerTMA>
+  // EA: Interesting, so the thing you return when you make an executable
+  // SM90_TMA_LOAD is not that operation but rather the copy traits on it. I
+  // guess that makes sense...I guess I'd have expected a Copy_Atom
   with(
     uint64_t& tma_mbar,
     [[maybe_unused]] uint16_t const& multicast_mask = 0,
