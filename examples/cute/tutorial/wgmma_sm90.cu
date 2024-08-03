@@ -84,23 +84,6 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
 {
   /* EA: Note the only stride given is dC */
 
-  /* EA: From the Cuda C++ manual sec 7.29:
-
-  > To perform a bulk tensor asynchronous copy of a multi-dimensional array, the
-  > hardware requires a tensor map. This object describes the layout of the
-  > multi-dimensional array in global and shared memory. A tensor map is created
-  > on the host using the cuTensorMapEncode API. The tensor map is transferred
-  > from host to device as a const kernel parameter annotated with
-  > __grid_constant__, and can be used on the device to copy a tile of data
-  > between shared and global memory. In contrast, performing a
-  > bulk-asynchronous copy of a contiguous one-dimensional array does not
-  > require a tensor map: it can be performed on-device with a pointer and size
-  > parameter.
-
-  EA: I'd like to understand how "tensor map" relates to "TMA descriptor"
-      mentioned e.g. in the gtc24 cutlass talk
-  */
-
   // Preconditions
   CUTE_STATIC_ASSERT_V(rank(shape_MNK) == Int<3>{});                   // (M, N, K)
   /* EA: I don't love that they use caps for MNK here */
@@ -206,13 +189,6 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
       copy(tma_a.with(producer_mbar[pipe]), tAgA(_,k_tile), tAsA(_,pipe));
       copy(tma_b.with(producer_mbar[pipe]), tBgB(_,k_tile), tBsB(_,pipe));
     }
-    /*
-    EA: What does `with` do? Line 132 of copy traits sm90 tma hpp says:
-
-    > Construct an executable SM90_TMA_LOAD with tma_mbar (temp. overloaded for
-    > grouped gemm/ptr array gemm)
-
-     */
     --k_tile_count;
     ++k_tile;
   }
@@ -248,12 +224,6 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
   //
   // TUTORIAL:
   //   Rather than interleaving the stages and instructions like in SM70 and SM80,
-
-  /* EA: Oh, I think I get this now; they're contrasting the queue pattern with
-         a synchronous producer consumer pattern with the same worker, like
-         produce / consume / produce / consume...that's what they mean by
-         "interleaving" */
-
   //     the SM90 mainloops rely on explicit producer-consumer synchronization
   //     on the purely async instructions TMA and MMA.
   //   More advanced pipeline and warp-specialization strategies are available in CUTLASS mainloops.
