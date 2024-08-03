@@ -110,9 +110,9 @@ struct SM90_TMA_LOAD_OP : SM90_TMA_LOAD {};
 
 // EA: make_tma_copy: I guess think of this as an analog of
 // `make_tiled_copy`...and it does return a `Copy_Atom`, but instead of taking
-// "brigade parameters" it takes a gmem *tensor* and an smem *layout*. Its
-// overloads are at line 1209 of this file. Then the Copy_Atom that comes out
-// has the important method below `get_tma_tensor`.
+// "brigade parameters" `Tile_MNK` it takes a gmem *tensor* and an smem
+// *layout*. Its overloads are at line 1209 of this file. Then the Copy_Atom
+// that comes out has the important method below `get_tma_tensor`.
 
 // The non-executable SM90_TMA_LOAD with tma_desc and no tma_mbar
 // Use .with(tma_mbar) to construct an executable version
@@ -271,6 +271,7 @@ struct Copy_Traits<SM90_TMA_LOAD_MULTICAST, NumBitsPerTMA, AuxParams_>
   // Construct an executable SM90_TMA_LOAD_MULTICAST with tma_mbar
   CUTE_HOST_DEVICE constexpr
   Copy_Traits<SM90_TMA_LOAD_MULTICAST_OP, NumBitsPerTMA>
+  // EA: So evidently the `_OP` suffix denotes "executable"
   with(uint64_t& tma_load_mbar, uint16_t const& multicast_mask) const {
     return {{}, {&tma_desc_, &tma_load_mbar, multicast_mask}};
   }
