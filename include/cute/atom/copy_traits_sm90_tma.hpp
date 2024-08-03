@@ -45,8 +45,11 @@
 namespace cute
 {
 
-/* EA: Interesting fcns here: 
-   - tma_partition 
+/* EA: Interesting things here: 
+   - tma_partition
+   Interesting things mentioned here
+   - Swizzle<B, M, S>
+   - Tma "box shape" (what's this?)
  */
 
 template <class GmemTmaBasisStrides_, class TmaGmemBasis_, class TmaSwizzle_>
@@ -131,6 +134,8 @@ struct Copy_Traits<SM90_TMA_LOAD, NumBitsPerTMA, AuxParams_>
     return &tma_desc_;
   }
 
+  /* EA: Where's the constructor? */
+
   // Construct an executable SM90_TMA_LOAD with tma_mbar
   CUTE_HOST_DEVICE constexpr
   Copy_Traits<SM90_TMA_LOAD_OP, NumBitsPerTMA>
@@ -154,47 +159,6 @@ struct Copy_Traits<SM90_TMA_LOAD, NumBitsPerTMA, AuxParams_>
     return {{}, {new_tma_desc, &tma_mbar, static_cast<uint64_t>(cache_hint)}};
   }
 
-/* EA: Colfax example:
-   (Host)
-     auto tma_load = make_tma_copy(SM90_TMA_LOAD{}, gmem_tensor, smem_layout);
-   (Device)
-     template <typename T, int CTA_M, int CTA_N, class TmaLoad, class GmemTensor>
-     void tma_load_kernel(__grid_constant__ const TmaLoad tma_load, GmemTensor gmem_tensor) {
-       using namespace cute;
-       constexpr int tma_transaction_bytes = CTA_M * CTA_N * sizeof(T);
-      
-       __shared__ T smem_data[CTA_M * CTA_N];
-       __shared__ uint64_t tma_load_mbar;
-      
-       auto smem_layout = make_layout(make_shape(CTA_M, CTA_N), LayoutRight{});
-       auto smem_tensor = make_tensor(make_smem_ptr(T), smem_layout);
-      
-       if (threadIdx.x == 0) {
-         auto gmem_tensor_coord = tma_load.get_tma_tensor(shape(gmem_tensor));
-      
-         auto gmem_tensor_coord_cta = local_tile(
-             gmem_tensor_coord,
-             Tile<Int<CTA_M>, Int<CTA_N>>{},
-             make_coord(blockIdx.x, blockIdx.y));
-         
-         // 1 is the *arrival count*
-     
-         initialize_barrier(tma_load_mbar, 1);
-      
-         set_barrier_transaction_bytes(tma_load_mbar, tma_transaction_bytes);
-      
-         auto tma_load_per_cta = tma_load.get_slice(0);
-         copy(tma_load.with(tma_load_mbar),
-              tma_load_per_cta.partition_S(gmem_tensor_coord_per_cta),
-              tma_load_per_cta.partition_D(smem_tensor));
-       }
-       __syncthreads();
-     
-       // 0 is the *phase*
-       wait_barrier(tma_load_mbar, 0);
-       // after this line, the TMA load is finished
-     }
-*/
 // EA: Note how get tma tensor (source below, used above) looks at
 // `aux_params_`. Also note that the `with` function in the example above is
 // mentioned in the comment below. I gather the reason we'd need both
