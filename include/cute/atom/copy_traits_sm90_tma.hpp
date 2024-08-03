@@ -208,7 +208,7 @@ struct Copy_Traits<SM90_TMA_LOAD_OP, NumBitsPerTMA>
 // The prefetch for SM90_TMA_LOAD with tma_desc
 template <class NumBitsPerTMA, class... Args>
 struct Copy_Traits<SM90_TMA_LOAD::PREFETCH, NumBitsPerTMA, Args...>
-// EA: The `Args...` don't seem to be used
+// EA: The `class... Args` don't seem to be used
      : TMA_LOAD_Unpack<SM90_TMA_LOAD::PREFETCH>
 {
   using ThrID     = Layout<_1>;
@@ -398,6 +398,8 @@ struct Copy_Traits<SM90_TMA_STORE, NumBitsPerTMA, AuxParams_>
     void const* const desc_ptr = &(traits.tma_desc_);
     void const* const src_ptr  = cute::raw_pointer_cast(src.data());
     auto dst_coord = dst.data().coord_;
+// EA: Looking at these print statements is a good way to see the important
+// fields
 #if 0
     auto [c0,c1,c2,c3,c4] = append<5>(dst_coord, 0);
     printf("THR (%d,%d,%d) BLK (%d,%d,%d) TMACRD (%d,%d,%d,%d,%d) SMEMADDR (%p)\n",
