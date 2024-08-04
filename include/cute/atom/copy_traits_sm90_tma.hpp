@@ -1170,7 +1170,7 @@ template <class TmaInternalType,
           class VShape, class VStride>
 CUTE_HOST_RTC
 auto
-make_tma_copy_atom(CopyOp,
+make_tma_copy_atom(CopyOp, // EA: CopyOp is used on line 1202 - it's wrapped by the return type
                    Tensor<GEngine,GLayout> const& gtensor,       // Full GMEM Tensor
                    SLayout                 const& slayout,       // CTA Tile of SMEM, potentially swizzled
                    uint32_t                const& num_multicast, // The number of CTAs involved in multicasting
@@ -1223,7 +1223,7 @@ template <class TmaInternalType,
           class SLayout,
           class TShape, class TStride,
           class VShape, class VStride>
-CUTE_HOST_RTC
+CUTE_HOST_RTC // EA: What's "Host Rtc"?
 auto
 make_tma_copy_tiled(CopyOp                  const& copy_op,
                     Tensor<GEngine,GLayout> const& gtensor,     // Full GMEM Tensor
@@ -1236,6 +1236,7 @@ make_tma_copy_tiled(CopyOp                  const& copy_op,
 {
   Copy_Atom atom = make_tma_copy_atom<TmaInternalType>(copy_op, gtensor, slayout,
                                                        cosize(cta_t_map), cta_v_map);
+                   // EA: `make tma copy atom` is on line 1173
 
   //
   // Construct the TiledCopy
@@ -1466,6 +1467,8 @@ make_tma_atom(CopyOp                  const& copy_op,
                                              size(cluster_size), cta_v_tile);
 }
 
+// EA: What's a "VectorCopy Partitioner"?
+
 // The "VectorCopy Partitioner" for TMA
 template <class... Args,
           class CtaCoord,
@@ -1487,7 +1490,7 @@ tma_partition(Copy_Atom<Args...>      const& copy_atom,
   // Scale that up to cover all of the smem_coords
   Layout layout_v = tile_to_shape(make_layout(inv_smem_layout), size<0>(stensor));
 
-  // Factor out the single-instrucion portion
+  // Factor out the single-instruction portion
   Layout tma_layout_v = make_layout(Int<Copy_Atom<Args...>::NumValSrc>{});
   auto layout_V = make_tile(logical_divide(layout_v, tma_layout_v));
 
