@@ -160,9 +160,11 @@ layout_type(Tensor<Engine, Layout<Shape,Stride>> const&)
 * ///////////////////////////////
 * // make_gmma_desc<Major::MN> //
 * ///////////////////////////////
-* Each GmmaDescriptor Major-MN describes a canonical layout of the form
-*
-* LayoutType::INTERLEAVE   : Swizzle<0,4,3> o smem_ptr o ((T,1,m),(8,k)):((1,T,SBO),(1T,LBO))
+* Each GmmaDescriptor Major-MN describes a canonical layout of the form */
+
+// EA: I'm a little confused because I thought wgmma was always k-major
+
+/*LayoutType::INTERLEAVE   : Swizzle<0,4,3> o smem_ptr o ((T,1,m),(8,k)):((1,T,SBO),(1T,LBO))
 * LayoutType::B32          : Swizzle<1,4,3> o smem_ptr o ((T,2,m),(8,k)):((1,T,LBO),(2T,SBO))
 * LayoutType::B64          : Swizzle<2,4,3> o smem_ptr o ((T,4,m),(8,k)):((1,T,LBO),(4T,SBO))
 * LayoutType::B128         : Swizzle<3,4,3> o smem_ptr o ((T,8,m),(8,k)):((1,T,LBO),(8T,SBO)) */
