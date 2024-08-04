@@ -119,6 +119,8 @@ using Layout_SW128_Atom = typename conditional<tnsp == GMMA::Major::MN,
                                                Layout_MN_SW128_Atom<Type>,
                                                Layout_K_SW128_Atom<Type>>::type;
 
+// EA: What does that mean, "position-dependent swizzle"?
+
 //
 // Tensor (position-dependent swizzle) to LayoutType utility
 //
