@@ -168,10 +168,10 @@ struct Copy_Traits<SM90_TMA_LOAD, NumBitsPerTMA, AuxParams_>
     return {{}, {new_tma_desc, &tma_mbar, static_cast<uint64_t>(cache_hint)}};
   }
 
-// EA: Note how get tma tensor (source below, used above) looks at
-// `aux_params_`. Also note that the `with` function in the example above is
-// mentioned in the comment below. I gather the reason we'd need both
-// __syncthreads() and wait_barrier is the multiple-cta nature of TMA.
+  // EA: Note how get tma tensor (source below, used above) looks at
+  // `aux_params_`. Also note that the `with` function in the example above is
+  // mentioned in the comment below. I gather the reason we'd need both
+  // __syncthreads() and wait_barrier is the multiple-cta nature of TMA.
 
   // Generate the TMA coord tensor
   template <class GShape>
@@ -322,6 +322,15 @@ struct Copy_Traits<SM90_TMA_LOAD_MULTICAST_OP, NumBitsPerTMA>
   uint64_t*, // smem mbarrier
   uint16_t   // multicast mask
   > const opargs_;
+  // EA: Interesting that there are no extra methods on the executable one, like
+  // "execute". Maybe execute is `copy_unpack`, deleted above, whose definition
+  // is on the parent TMA_LOAD_Unpack. (It's the second top-level definition in
+  // this file.)
+
+  // EA: The `copy_unpack` is really wrapping `explode_tuple
+  // (CallCOPY<CopyOp>{}, ...)`. `CallCOPY` is defined in include / cute / arch
+  // / util.hpp line 155, and that is a functor struct wrapping `CopyOp::copy
+  // (...)`
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -363,6 +372,8 @@ struct SM90_TMA_STORE_OP : SM90_TMA_STORE {};
 // The executable SM90_TMA_STORE with tma_desc
 template <class NumBitsPerTMA, class AuxParams_>
 struct Copy_Traits<SM90_TMA_STORE, NumBitsPerTMA, AuxParams_>
+// EA: Oh, interesting, I thought the executable ones were always suffixed with
+// `_OP`.
 {
   using ThrID     = Layout<_1>;
   // Map from (src-thr,src-val) to bit
@@ -371,6 +382,10 @@ struct Copy_Traits<SM90_TMA_STORE, NumBitsPerTMA, AuxParams_>
   using DstLayout = Layout<Shape<_1,NumBitsPerTMA>>;
   // Reference map from (thr,val) to bit
   using RefLayout = SrcLayout;
+
+  // EA: What do they mean "arguments" here? Arguments of the constructor of
+  // that struct? No, because that struct has nothing but static methods on it
+  // (ie. `copy` for 1D - 5D)
 
   // SM90_TMA_STORE arguments
   TmaDescriptor tma_desc_;
@@ -529,8 +544,16 @@ struct Copy_Traits<SM90_TMA_REDUCE_ADD, NumBitsPerTMA, AuxParams_>
 ///////////////////////////// BULK COPY //////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 
+// EA: The non-tensor bulk copies are specialized separately, I guess bcs the
+// API is different when there's no TmaDescriptor (CUtensorMap) needed.
+
+// EA: Is "bulk copy" as opposed to "TMA" what they're calling the non-tensor
+// version?
+
 template <class NumBitsPerTMA, class... OpArgs>
 struct Copy_Traits<SM90_BULK_COPY_G2S, NumBitsPerTMA, OpArgs...>
+// EA: SM90_BULK_COPY_G2S wraps `cp async bulk shared::cluster global mbarrier
+// complete_tx bytes`
 {
   static_assert(int32_t(NumBitsPerTMA::value / 8) % 16 == 0,
                 "Bulk Copy requires copy vector size align to 16B.");
@@ -559,15 +582,26 @@ struct Copy_Traits<SM90_BULK_COPY_G2S, NumBitsPerTMA, OpArgs...>
   CUTE_HOST_DEVICE friend constexpr
   void
   copy_unpack(Copy_Traits        const& traits,
+              // EA: This is a method of a Copy_Traits struct, but it takes a
+              // Copy_Traits arg. That arg is used only to access its field
+              // `bulk_load_mbar_`
               Tensor<TS,SLayout> const& src,
               Tensor<TD,DLayout>      & dst)
   {
     static_assert(is_same<cute::tuple<OpArgs...>, cute::tuple<uint64_t*>>::value,
                   "Extra arguments not set. Set .with() before use.");
+    // EA: Hmmm...the way it checks if the extra args are set is to ask if tuple
+    // <OpArgs...> and tuple <uint64_t *> are the same. Does this mark the
+    // difference between executable / not? (ie. whether the `_OP` suffix is
+    // there?)
     static_assert(is_gmem<TS>::value, "Expected gmem src for SM90_BULK_COPY_G2S");
     static_assert(is_smem<TD>::value, "Expected smem dst for SM90_BULK_COPY_G2S");
     SM90_BULK_COPY_G2S::copy(raw_pointer_cast(src.data()), get<0>(traits.bulk_load_mbar_),
                              raw_pointer_cast(dst.data()), int32_t(NumBitsPerTMA::value / 8));
+    // EA: `copy` is the method that issues `cp async bulk shared::cluster
+    // global mbarrier complete_tx bytes`. It wants four args: gmem_ptr,
+    // mbar_ptr, smem_ptr, load_bytes. No `TmaDescriptor` is needed bcs it's not
+    // `cp async bulk tensor`
   }
 };
 
@@ -663,7 +697,9 @@ namespace detail {
 //      _1:d0           s1:d1     =>  replace_back     s1:d1
 //      s0:d0           s1:s0*d0  =>  replace_back  s0*s1:d0   if s0*s1 <= 256
 //      s0:d0           s1:d1     =>  append           s1:d1
-//
+
+// EA: What's the point?
+
 // @pre OldShape and OldStride are flat
 template <int I, class OldShape, class OldStride, class NewShape, class NewStride>
 CUTE_HOST_DEVICE constexpr
@@ -909,6 +945,8 @@ fill_tma_gmem_shape_stride(Copy_Traits<Op,Bits,Aux>  const& tma_traits,
                                     gmem_prob_shape, gmem_prob_stride);
 }
 
+// EA: A `sidx2gmode`?
+
 // Use a sidx2gmode to read through the GMEM tensor
 //   and construct a TMA Descriptor for the resulting instruction
 // At the same time, construct the Tma Tensor's Stride to generate
@@ -920,8 +958,11 @@ template <class TmaInternalType,
           int B, int M, int S>
 CUTE_HOST_RTC
 auto
+// EA: It's `auto`...the thing it returns is `cute::make_tuple (tma_desc,
+// AuxParams{gmem_tma_basis_stride})`
 make_tma_copy_desc(Tensor<GEngine,GLayout> const& gtensor,         // The original GMEM Tensor
                    Layout<TShape,TStride>  const& tma_gbasis,      // TMA mode -> GMEM mode mapping
+                   // EA: TMA mode -> GMEM mode mapping...what does that mean?
                    Swizzle<B,M,S>          const& swizzle,         // Swizzle fn on smem_idx
                    uint32_t                       num_multicast)   // The number of CTAs in multicasting
 {
@@ -967,6 +1008,9 @@ make_tma_copy_desc(Tensor<GEngine,GLayout> const& gtensor,         // The origin
     stride = (stride * sizeof_bits_v<TmaInternalType>) / 8;
   }
 
+  // EA: I didn't know about this 0b1111 notation, binary I guess. Meta says the
+  // notation was introduced in C++14 and it is an `int`.
+
   // Assert the byte strides. Tma Descriptor uses byte strides
   assert((gmem_prob_stride[1]) < (uint64_t(1) << 40));       // Stride must be max 2^40
   assert((gmem_prob_stride[1] & 0b1111) == 0);               // Stride must be multiple of 16B (128b)
@@ -986,6 +1030,8 @@ make_tma_copy_desc(Tensor<GEngine,GLayout> const& gtensor,         // The origin
   // The smem box is simply given by the sizes of the modes in tma_gbasis
   for_each(make_seq<tma_dim>{}, [&](auto i) {
     smem_box_shape[i] *= size<i>(tma_gbasis);
+    // EA: Recall `size` takes the product of the shape entries of a tuple...in
+    // this case a sub-tuple which is the ith mode
   });
   // Finally, truncate the tma box by the num_multicast
   for (uint32_t i = tma_dim-1, multicast = num_multicast; multicast > 1; --i) {
@@ -1072,6 +1118,8 @@ make_tma_copy_desc(Tensor<GEngine,GLayout> const& gtensor,         // The origin
                                         sizeof_bits<             TmaInternalType>{});
 
   auto gbasis = make_basis_like(shape(gtensor));
+
+  // EA: The "mocked gmem stride"...
 
   // Finally, get the inverse permutation of the E<i> bases for the mocked gmem stride
   auto gmem_tma_basis_stride = transform_leaf(gbasis, [&](auto ei) {
@@ -1181,6 +1229,9 @@ make_tma_copy_tiled(CopyOp                  const& copy_op,
                     Tensor<GEngine,GLayout> const& gtensor,     // Full GMEM Tensor
                     SLayout                 const& slayout,     // CTA Tile of SMEM
                     Layout<TShape,TStride>  const& cta_t_map,   // T: CTA thr idx -> logical TMA tid
+                                          // EA: Hmmm...why does a TMA have a
+                                          // logical tid at all? Only one thread
+                                          // invokes a TMA
                     Layout<VShape,VStride>  const& cta_v_map)   // V: CTA val idx -> gmem mode
 {
   Copy_Atom atom = make_tma_copy_atom<TmaInternalType>(copy_op, gtensor, slayout,
@@ -1201,6 +1252,11 @@ make_tma_copy_tiled(CopyOp                  const& copy_op,
   auto layout_v = composition(inv_smem_layout, num_elems_per_tma);
   // Scale that up to cover all of the smem_coords
   auto layout_V = tile_to_shape(make_layout(layout_v), size(cta_v_map));
+
+  // EA: Both `layout_v` and `layout_V`, interesting
+
+  // EA: What are CTA T and CTA V, mentioned in the comments below?
+
   // CTA T -> smem idx
   auto layout_t = make_layout(cosize(cta_t_map), shape_div(num_elems_per_tma, cosize(cta_t_map)));
   // CTA TID -> smem coord
@@ -1274,8 +1330,11 @@ make_tma_copy_tiled(CopyOp                  const& copy_op,
 
     {
     // cuTENSOR 4D
-    auto layout = make_shape(make_shape(32,40),make_shape(make_shape(8,8),656)); 
-    // GMEM
+    auto layout = make_shape(make_shape(32,40),make_shape(make_shape(8,8),656)); */
+
+    // EA: Interesting, a hierarchical 4D tensor
+ 
+ /* // GMEM
     auto cta_tile    = make_shape(_128{},make_shape(_32{},_2{}));                
     // GMEM Tiling:
     //   Take 128-elem from m: m0 must divide 128,
@@ -1291,8 +1350,15 @@ make_tma_copy_tiled(CopyOp                  const& copy_op,
     print("TMA desc     : "); print(tma.tma_desc_); print("\n");
  *
  * Usage:
-     Tensor mA = tma_a.get_tma_tensor(make_shape(M,N));        
-     // (M,N) TMA coord tensor
+     Tensor mA = tma_a.get_tma_tensor(make_shape(M,N)) */
+
+  // EA: Here `tma_a` is what...the grid_constant thing? (EA: That's the
+  // `Copy_Atom` btw). 
+  
+  // EA: Maybe I should look at the `get_tma_tensor` method. (EA: There are
+  // overloads in this file at lines 180, 291, 406, 499)
+
+  /* // (M,N) TMA coord tensor
      Tensor gA = local_tile(mA, cta_tile, cta_coord);          
      // (BLK_M,BLK_N) TMA coord tensor for this CTA
      Tensor sA = make_tensor(make_smem_ptr<T>(sptr), slayout); 
@@ -1335,9 +1401,11 @@ make_tma_copy(CopyOp                  const& copy_op,
     // Prefer TmaInternalType if specified. Fallback to GEngine::value_type
     using TmaType = conditional_t<is_same<void, TmaInternalType>::value, 
                                   typename GEngine::value_type, TmaInternalType>;
+    // EA: What is `TmaInternalType`?
     return detail::make_tma_copy_tiled<TmaType>(copy_op,
                                                 gtensor, slayout,
                                                 cta_t_tile, cta_v_tile);
+    // EA: `make tma copy tiled` is on line 1228
   }
 }
 

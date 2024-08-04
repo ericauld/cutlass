@@ -73,9 +73,7 @@ template <class ProblemShape, class CtaTiler,
           class Alpha, class Beta>
 __global__ static
 __launch_bounds__(decltype(size(TiledMma{}))::value)
-/* EA: Recall the first arg of launch bounds is max threads per block. Also the
-       `size` of a Tiled MMA is MNK, not the number of threads, right? Must not
-       be*/
+// EA: Recall the first arg of launch bounds is max threads per block
 void
 gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
             TA const* A, CUTLASS_GRID_CONSTANT TmaA const tma_a,
@@ -83,8 +81,6 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
             TC      * C, CStride dC, TiledMma mma,
             Alpha alpha, Beta beta)
 {
-  /* EA: Note the only stride given is dC */
-
   // Preconditions
   CUTE_STATIC_ASSERT_V(rank(shape_MNK) == Int<3>{});                   // (M, N, K)
   /* EA: I don't love that they use caps for MNK here */
