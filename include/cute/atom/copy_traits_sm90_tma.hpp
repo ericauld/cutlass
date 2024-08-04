@@ -1471,6 +1471,15 @@ make_tma_atom(CopyOp                  const& copy_op,
 
 // EA: What's a "VectorCopy Partitioner"?
 
+/*
+Called from kernel as
+auto [tAgA, tAsA] = tma_partition(tma_a, Int<0>{}, Layout<_1>{},
+                                    group_modes<0,2>(sA), group_modes<0,2>(gA));  // (TMA,k) and (TMA,PIPE)
+
+  auto [tBgB, tBsB] = tma_partition(tma_b, Int<0>{}, Layout<_1>{},
+                                    group_modes<0,2>(sB), group_modes<0,2>(gB));  // (TMA,k) and (TMA,PIPE)
+*/
+
 // The "VectorCopy Partitioner" for TMA
 template <class... Args,
           class CtaCoord,
