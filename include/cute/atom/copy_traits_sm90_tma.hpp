@@ -218,7 +218,7 @@ struct Copy_Traits<SM90_TMA_LOAD_OP, NumBitsPerTMA>
 // The prefetch for SM90_TMA_LOAD with tma_desc
 template <class NumBitsPerTMA, class... Args>
 struct Copy_Traits<SM90_TMA_LOAD::PREFETCH, NumBitsPerTMA, Args...>
-// EA: The `class... Args` don't seem to be used
+// EA: The `class... Args` don't seem to be used, I wonder why
      : TMA_LOAD_Unpack<SM90_TMA_LOAD::PREFETCH>
 {
   using ThrID     = Layout<_1>;
@@ -273,7 +273,8 @@ struct Copy_Traits<SM90_TMA_LOAD_MULTICAST, NumBitsPerTMA, AuxParams_>
   // Construct an executable SM90_TMA_LOAD_MULTICAST with tma_mbar
   CUTE_HOST_DEVICE constexpr
   Copy_Traits<SM90_TMA_LOAD_MULTICAST_OP, NumBitsPerTMA>
-  // EA: So evidently the `_OP` suffix denotes "executable"
+  // EA: So evidently the `_OP` suffix denotes "executable". Oh, no, later on
+  // there's one described as executable that doesn't have the `_OP` on it.
   with(uint64_t& tma_load_mbar, uint16_t const& multicast_mask) const {
     return {{}, {&tma_desc_, &tma_load_mbar, multicast_mask}};
   }
