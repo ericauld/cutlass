@@ -164,8 +164,11 @@ layout_type(Tensor<Engine, Layout<Shape,Stride>> const&)
 * LayoutType::INTERLEAVE   : Swizzle<0,4,3> o smem_ptr o ((T,1,m),(8,k)):((1,T,SBO),(1T,LBO))
 * LayoutType::B32          : Swizzle<1,4,3> o smem_ptr o ((T,2,m),(8,k)):((1,T,LBO),(2T,SBO))
 * LayoutType::B64          : Swizzle<2,4,3> o smem_ptr o ((T,4,m),(8,k)):((1,T,LBO),(4T,SBO))
-* LayoutType::B128         : Swizzle<3,4,3> o smem_ptr o ((T,8,m),(8,k)):((1,T,LBO),(8T,SBO))
-*
+* LayoutType::B128         : Swizzle<3,4,3> o smem_ptr o ((T,8,m),(8,k)):((1,T,LBO),(8T,SBO)) */
+
+// EA: Why is a thing called `smem_ptr` in the place usually called `offset`?
+
+/*
 * where
 *   T  : sizeof(uint128_t) / sizeof(value_type)
 *   m  : integer in [1,16] corresponding to GMMA shape
@@ -177,8 +180,12 @@ layout_type(Tensor<Engine, Layout<Shape,Stride>> const&)
 * For example,
 *   auto smem_layout = tile_to_shape(Layout_MN_SW128_Atom<value_type>{}, Shape<_128,_64>{});
 * is guaranteed to be accepted by make_gmma_desc<Major::MN> for appropriate value_type.
-*
-* //////////////////////////////
+*/
+
+// EA: These `GMMA::Layout MN XXX Atom <value type>` are the second big group of
+// top-level defs in this file
+
+/* //////////////////////////////
 * // make_gmma_desc<Major::K> //
 * //////////////////////////////
 * Each GmmaDescriptor Major-K describes a canonical layout of the form
