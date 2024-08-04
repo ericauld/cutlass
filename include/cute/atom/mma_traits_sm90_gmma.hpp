@@ -134,6 +134,7 @@ layout_type(Tensor<Engine, Layout<Shape,Stride>> const&)
                 "Expected uint128_t type in LayoutType conversion.");
 
   using Swizzle = get_swizzle_t<Engine>;
+  // EA: Interesting, so the swizzle, if present, lives on the Engine
   constexpr int B = Swizzle::num_bits;
   constexpr int M = Swizzle::num_base;
   constexpr int S = Swizzle::num_shft;
