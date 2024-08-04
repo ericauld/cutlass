@@ -84,6 +84,7 @@ CUTE_HOST std::ostream& operator<<(std::ostream& os, LayoutType const& t) {
 } // end namespace GMMA
 
 union GmmaDescriptor
+// EA: It's a union, not a struct, interesting
 {
   CUTE_HOST_DEVICE constexpr
   GmmaDescriptor() noexcept : desc_(0) {}
