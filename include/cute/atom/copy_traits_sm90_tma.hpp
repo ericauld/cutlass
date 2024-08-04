@@ -147,7 +147,8 @@ struct Copy_Traits<SM90_TMA_LOAD, NumBitsPerTMA, AuxParams_>
   Copy_Traits<SM90_TMA_LOAD_OP, NumBitsPerTMA>
   // EA: Interesting, so the thing you return when you make an executable
   // SM90_TMA_LOAD is not that operation but rather the copy traits on it. I
-  // guess that makes sense...I guess I'd have expected a Copy_Atom
+  // guess that makes sense...I guess I'd have expected a Copy_Atom, which I
+  // believe inherits from Copy_Traits
   with(
     uint64_t& tma_mbar,
     [[maybe_unused]] uint16_t const& multicast_mask = 0,
@@ -156,7 +157,8 @@ struct Copy_Traits<SM90_TMA_LOAD, NumBitsPerTMA, AuxParams_>
     return {{}, {&tma_desc_, &tma_mbar, static_cast<uint64_t>(cache_hint)}};
   }
 
-  // Construct an executable SM90_TMA_LOAD with tma_mbar (temp. overloaded for grouped gemm/ptr array gemm)
+  // Construct an executable SM90_TMA_LOAD with tma_mbar (temp. overloaded for
+  // grouped gemm/ptr array gemm)
   CUTE_HOST_DEVICE constexpr
   Copy_Traits<SM90_TMA_LOAD_OP, NumBitsPerTMA>
   with(
@@ -168,7 +170,7 @@ struct Copy_Traits<SM90_TMA_LOAD, NumBitsPerTMA, AuxParams_>
     return {{}, {new_tma_desc, &tma_mbar, static_cast<uint64_t>(cache_hint)}};
   }
 
-  // EA: Note how get tma tensor (source below, used above) looks at
+  // EA: Note how get_tma_tensor (source below, used above) looks at
   // `aux_params_`. Also note that the `with` function in the example above is
   // mentioned in the comment below. I gather the reason we'd need both
   // __syncthreads() and wait_barrier is the multiple-cta nature of TMA.
@@ -1524,6 +1526,8 @@ tma_partition(Copy_Atom<Args...>      const& copy_atom,
   Tensor gresult = domain_offset(gcoord, gtensor_v);
   Tensor sresult = domain_offset(scoord, stensor_v);
 
+  // EA: Don't know that function `domain_offset`
+
   return cute::make_tuple(gresult, sresult);
 }
 
@@ -1559,6 +1563,7 @@ template <class TmaInternalType = void,
 CUTE_HOST_RTC
 auto
 make_tma_copy_A_sm90(CopyOp                  const& copy_op,
+// EA: Why was the `_sm90` suffix necessary here?
                      Tensor<GEngine,GLayout> const& gtensor,
                      SLayout                 const& slayout,
                      CTA_Tiler               const& cta_tiler,
@@ -1579,6 +1584,9 @@ make_tma_copy_A_sm90(CopyOp                  const& copy_op,
   } else {
     auto cta_v_tile = make_identity_layout(shape(gtensor)).compose(cta_tiler_mk);
     auto cta_t_tile = make_layout(cluster_size_n);
+
+    // EA: That's interesting...`cta t tile` is assigned a single-mode layout of
+    // size the cluster size. What is `cta t tile`?
 
     // Prefer TmaInternalType if specified. Fallback to GEngine::value_type
     using TmaType = conditional_t<is_same<void, TmaInternalType>::value, 
