@@ -69,6 +69,11 @@ namespace GMMA {
 // Common layouts for GMMA Shared Memory //
 ///////////////////////////////////////////
 
+// EA: Recall the way the Swizzle<E, L, O> args work is there are E bits at the
+// end untouched, then a portion of length L which is set by xor'ing itself with
+// a same-length mask set offset O bits to the left of it. (They may overlap if
+// |O| < L, and also O can be negative)
+
 // M|N-major GMMA layouts in units of bits
 using Layout_MN_INTER_Atom_Bits = ComposedLayout<Swizzle<0,4,3>, smem_ptr_flag, Layout<Shape< _128,_8>,Stride<_1, _128>>>;
 using Layout_MN_SW32_Atom_Bits  = ComposedLayout<Swizzle<1,4,3>, smem_ptr_flag, Layout<Shape< _256,_8>,Stride<_1, _256>>>;
@@ -162,7 +167,13 @@ layout_type(Tensor<Engine, Layout<Shape,Stride>> const&)
 * ///////////////////////////////
 * Each GmmaDescriptor Major-MN describes a canonical layout of the form */
 
-// EA: I'm a little confused because I thought wgmma was always k-major
+// EA: I'm a little confused because I thought wgmma was always k-major. But
+// then below, the `ABLayout used for all smem arguments is 
+
+// template <int M, int K>
+// using ABLayout = 
+//    Layout<Shape <_128, Shape<Int<M>, Int<K>>>,
+//           Stride< _0 ,           _1, Int<M>>>>
 
 /*LayoutType::INTERLEAVE   : Swizzle<0,4,3> o smem_ptr o ((T,1,m),(8,k)):((1,T,SBO),(1T,LBO))
 * LayoutType::B32          : Swizzle<1,4,3> o smem_ptr o ((T,2,m),(8,k)):((1,T,LBO),(2T,SBO))
