@@ -79,6 +79,8 @@ using Layout_MN_INTER_Atom_Bits = ComposedLayout<Swizzle<0,4,3>, smem_ptr_flag, 
 using Layout_MN_SW32_Atom_Bits  = ComposedLayout<Swizzle<1,4,3>, smem_ptr_flag, Layout<Shape< _256,_8>,Stride<_1, _256>>>;
 using Layout_MN_SW64_Atom_Bits  = ComposedLayout<Swizzle<2,4,3>, smem_ptr_flag, Layout<Shape< _512,_8>,Stride<_1, _512>>>;
 using Layout_MN_SW128_Atom_Bits = ComposedLayout<Swizzle<3,4,3>, smem_ptr_flag, Layout<Shape<_1024,_8>,Stride<_1,_1024>>>;
+// EA: How does the 0, 1, 2, 3 go along with the 128, 256, 512, 1024, i.e.
+// 16-byte, 32-byte, 64-byte, 128-byte?
 
 // K-major GMMA layouts in units of bits
 using Layout_K_INTER_Atom_Bits  = ComposedLayout<Swizzle<0,4,3>, smem_ptr_flag, Layout<Shape<_8, _128>,Stride< _128,_1>>>;
@@ -168,12 +170,14 @@ layout_type(Tensor<Engine, Layout<Shape,Stride>> const&)
 * Each GmmaDescriptor Major-MN describes a canonical layout of the form */
 
 // EA: I'm a little confused because I thought wgmma was always k-major. But
-// then below, the `ABLayout used for all smem arguments is 
+// then below, the `ABLayout` used for all smem arguments is MN-major:
 
 // template <int M, int K>
 // using ABLayout = 
 //    Layout<Shape <_128, Shape<Int<M>, Int<K>>>,
 //           Stride< _0 ,           _1, Int<M>>>>
+
+// And above, the `GMMA::Layout X XXX Atom <value type>` have both MN- and K-major
 
 /*LayoutType::INTERLEAVE   : Swizzle<0,4,3> o smem_ptr o ((T,1,m),(8,k)):((1,T,SBO),(1T,LBO))
 * LayoutType::B32          : Swizzle<1,4,3> o smem_ptr o ((T,2,m),(8,k)):((1,T,LBO),(2T,SBO))
@@ -234,6 +238,7 @@ make_gmma_desc(Tensor<TEngine,TLayout> const& tensor)
 
   // Start address (4LSB not included)
   uint32_t start_address = cast_smem_ptr_to_uint(raw_pointer_cast(u128_tensor.data()));
+  // EA: Interesting, the smem ptr is a 32-bit int; I'd have thought 64
   desc.bitfield.start_address_ = static_cast<uint16_t>(start_address >> 4);
 
   constexpr uint8_t base_offset = 0;
