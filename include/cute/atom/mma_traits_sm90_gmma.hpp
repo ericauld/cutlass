@@ -69,10 +69,10 @@ namespace GMMA {
 // Common layouts for GMMA Shared Memory //
 ///////////////////////////////////////////
 
-// EA: Recall the way the Swizzle<E, L, O> args work is there are E bits at the
-// end untouched, then a portion of length L which is set by xor'ing itself with
-// a same-length mask set offset O bits to the left of it. (They may overlap if
-// |O| < L, and also O can be negative)
+// EA: Recall the way the Swizzle<End, Len, Off> args work is there are E bits
+// at the end untouched, then a portion of length L which is set by xor'ing its
+// starting value with a same-length mask set offset Off bits to the left of it.
+// (They may overlap if |O| < L, and also O can be negative)
 
 // M|N-major GMMA layouts in units of bits
 using Layout_MN_INTER_Atom_Bits = ComposedLayout<Swizzle<0,4,3>, smem_ptr_flag, Layout<Shape< _128,_8>,Stride<_1, _128>>>;
