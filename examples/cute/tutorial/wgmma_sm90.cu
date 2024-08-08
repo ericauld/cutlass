@@ -245,7 +245,6 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
   // EA: So we're going to have both the `producer_mbar` / `consumer_mbar` and
   // also the pipeline going on?
 
-  // EA: It seems weird that you'd need to tell it /not/ to unroll
   CUTE_NO_UNROLL
   while (k_tile_count > -K_PIPE_MAX)
   {
