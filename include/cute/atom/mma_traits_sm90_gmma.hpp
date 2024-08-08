@@ -73,6 +73,7 @@ warpgroup_fence_operand(float& reg) {
     auto f32_frg = recast<float>(frg);
     // EA: If it is a tensor of floats, recast it to float?
     CUTE_UNROLL
+    // EA: I'd like to read more about CUTE_UNROLL
     for (int i = 0; i < size(f32_frg); ++i) {
       warpgroup_fence_operand(f32_frg(i));
     }
