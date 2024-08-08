@@ -187,7 +187,6 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
     {
       // Set expected Tx Bytes after each reset / init
       ProducerBarType::arrive_and_expect_tx(&producer_mbar[pipe], kTmaTransactionBytes);
-      /* EA: Recall the producer is a Cluster Transaction Barrier */
       copy(tma_a.with(producer_mbar[pipe]), tAgA(_,k_tile), tAsA(_,pipe));
       copy(tma_b.with(producer_mbar[pipe]), tBgB(_,k_tile), tBsB(_,pipe));
     }
@@ -203,7 +202,10 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
   //   The MMA Descriptor generation is automatic via inspection and validation of the SMEM Layouts.
   //   Because the MMA reads directly from SMEM and the fragments are descriptors rather than registers,
   //     there is no need for copy(tCsA, tCrA) in the mainloop.
-  
+
+  // EA: Calling these functions `make_fragment_*` seems like a lie, might
+  // invite mistakes...
+
   ThrMMA thr_mma = mma.get_thread_slice(threadIdx.x);
   Tensor tCsA = thr_mma.partition_A(sA);                               // (MMA,MMA_M,MMA_K,PIPE)
   Tensor tCsB = thr_mma.partition_B(sB);                               // (MMA,MMA_N,MMA_K,PIPE)
@@ -216,8 +218,6 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
   // Allocate "fragments"
   Tensor tCrA = thr_mma.make_fragment_A(tCsA);                         // (MMA,MMA_M,MMA_K,PIPE)
   Tensor tCrB = thr_mma.make_fragment_B(tCsB);                         // (MMA,MMA_N,MMA_K,PIPE)
-  // EA: Calling these functions `make_fragment_*` seems like a lie, might
-  // invite mistakes...
 
   //
   // PIPELINED MAIN LOOP
