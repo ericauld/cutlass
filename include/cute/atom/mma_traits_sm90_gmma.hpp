@@ -46,7 +46,7 @@ void
 warpgroup_fence_operand(Tensor<Engine, Layout>& frg) {
 // EA: Note there are two overloads of `warpgroup_fence_operand` in arch /
 // mma_sm90_gmma.hpp, on lines 83 and 94, oe accepting `uint32_t & reg` and the
-// other `float & reg`. So I guess this 
+// other `float & reg`. I don't understand the point of this
 
 /*
 CUTE_HOST_DEVICE
