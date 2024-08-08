@@ -275,7 +275,7 @@ public:
         //  EA: Interesting that here they call arg %1 `phase`, and give it
         //  uint32_t type, but in the ptx manual they always call it
         //  `phaseParity` and explicitly say that its valid values are only 0 and
-        //  1. (Sec 9.7.12.15.16)
+        //  1. (ptx Sec 9.7.12.15.16)
         //  
         //  The parameter names:
         //  waitComplete <- P1
