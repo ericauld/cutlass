@@ -168,8 +168,10 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
   for (int pipe = 0; pipe < K_PIPE_MAX; ++pipe) {
     if ((warp_idx == 0) && lane_predicate) {
       ProducerBarType::init(&producer_mbar[pipe],   1);
-      ConsumerBarType::init(&consumer_mbar[pipe], 128);
       // EA: `consumer_mbar` used lines 260 & 268
+      ConsumerBarType::init(&consumer_mbar[pipe], 128);
+      // EA: Why is it a good idea to assume that exactly 4 warps will be
+      // consumers?
     }
   }
   // Ensure barrier init is complete on all CTAs
@@ -212,6 +214,8 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
   // Allocate "fragments"
   Tensor tCrA = thr_mma.make_fragment_A(tCsA);                         // (MMA,MMA_M,MMA_K,PIPE)
   Tensor tCrB = thr_mma.make_fragment_B(tCsB);                         // (MMA,MMA_N,MMA_K,PIPE)
+  // EA: Calling these functions `make_fragment_*` seems like a lie, might
+  // invite mistakes...
 
   //
   // PIPELINED MAIN LOOP
