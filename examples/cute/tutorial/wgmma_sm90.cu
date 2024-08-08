@@ -157,7 +157,6 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
 
   // Initialize Barriers
   int warp_idx = cutlass::canonical_warp_idx_sync();
-  /* EA: What is `canonical warp idx sync`?*/
   int lane_predicate = cute::elect_one_sync();
   uint64_t* producer_mbar = smem.tma_barrier;
   uint64_t* consumer_mbar = smem.mma_barrier;
