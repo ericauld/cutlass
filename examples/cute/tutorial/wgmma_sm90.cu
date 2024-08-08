@@ -242,7 +242,10 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
   auto write_state = cutlass::PipelineState<K_PIPE_MAX>();             // TMA writes
   auto read_state  = cutlass::PipelineState<K_PIPE_MAX>();             // MMA  reads
 
-  /* EA: It seems weird that you'd need to tell it /not/ to unroll */
+  // EA: So we're going to have both the `producer_mbar` / `consumer_mbar` and
+  // also the pipeline going on?
+
+  // EA: It seems weird that you'd need to tell it /not/ to unroll
   CUTE_NO_UNROLL
   while (k_tile_count > -K_PIPE_MAX)
   {
@@ -253,8 +256,8 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
     // MMAs to cover 1 K_TILE
     warpgroup_arrive();
     gemm(mma, tCrA(_,_,_,read_pipe), tCrB(_,_,_,read_pipe), tCrC);     // (V,M) x (V,N) => (V,M,N)
-    /* EA: Really (V,M) x (V,N) => (V,M,N)? No reduction axis? Seems odd; also
-           there are three underscores in the tensors on the left, not two */
+    // EA: Really (V,M) x (V,N) => (V,M,N)? No reduction axis? Seems odd; also
+    // there are three underscores in the tensors on the left, not two.
     warpgroup_commit_batch();
 
     // Wait for all MMAs in a K_TILE to complete
@@ -265,7 +268,6 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
     ++read_state;
 
     if ((warp_idx == 0) && lane_predicate)
-    /* EA: lane_predicate...? */
     {
       int pipe = write_state.index();
       // Wait for Consumer to complete consumption
