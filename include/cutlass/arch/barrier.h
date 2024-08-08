@@ -259,6 +259,8 @@ public:
 #endif
   }
 
+  // EA: What would the register be "burned" on?
+
   // Static version of wait - in case we don't want to burn a register
   CUTLASS_DEVICE
   static void wait(ValueType const* smem_ptr, uint32_t phase) {

@@ -114,6 +114,8 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
   Tensor gB = local_tile(mB, cta_tiler, cta_coord, Step< X,_1,_1>{});  // (BLK_N,BLK_K,k)
   Tensor gC = local_tile(mC, cta_tiler, cta_coord, Step<_1,_1, X>{});  // (BLK_M,BLK_N)
 
+  // EA: Interesting, all dynamic smem
+
   // Shared memory tensors
   extern __shared__ char shared_memory[];
   using SharedStorage = SharedStorage<TA, TB, SmemLayoutA, SmemLayoutB>;
@@ -226,7 +228,7 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
   //     on the purely async instructions TMA and MMA.
   //   More advanced pipeline and warp-specialization strategies are available in CUTLASS mainloops.
   
-  // EA: The sm90 files inside include / cutlass / gemm / collective are:
+  // EA: The sm90 files in `include/ cutlass/ gemm/ collective` are:
   /* - sm90_mma_array_tma_gmma_ss_warpspecialized.hpp
      - sm90_mma_multistage_gmma_rs_warpspecialized.hpp
      - sm90_mma_multistage_gmma_ss_warpspecialized.hpp
