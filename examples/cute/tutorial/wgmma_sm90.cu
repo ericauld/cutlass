@@ -58,10 +58,11 @@ struct SharedStorage
   array_aligned<ElementA, cosize_v<SmemLayoutA>> smem_A;
   array_aligned<ElementB, cosize_v<SmemLayoutB>> smem_B;
 
-  /* EA: I'd like to learn more about array_aligned. Reminds 
-     me of the cuda::aligned_size_t<N> that can be an arg
-     to the Shape template arg of cuda::memcpy_async */  
+  // EA: I'd like to learn more about array_aligned. Reminds me of the
+  // cuda::aligned_size_t<N> that can be an arg to the Shape template arg of
+  // cuda::memcpy_async.
 
+  // EA: Evidently one barrier for each of the pipeline buffers
   uint64_t tma_barrier[size<2>(SmemLayoutA{})];
   uint64_t mma_barrier[size<2>(SmemLayoutA{})];
 };
