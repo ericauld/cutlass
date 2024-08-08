@@ -169,6 +169,7 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
     if ((warp_idx == 0) && lane_predicate) {
       ProducerBarType::init(&producer_mbar[pipe],   1);
       ConsumerBarType::init(&consumer_mbar[pipe], 128);
+      // EA: `consumer_mbar` used lines 260 & 268
     }
   }
   // Ensure barrier init is complete on all CTAs
