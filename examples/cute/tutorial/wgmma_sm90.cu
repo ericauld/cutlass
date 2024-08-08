@@ -226,16 +226,14 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
   //     on the purely async instructions TMA and MMA.
   //   More advanced pipeline and warp-specialization strategies are available in CUTLASS mainloops.
   
-  /* 
-  EA: cf the mainloop files:
-  - sm90_mma_array_tma_gmma_ss_warpspecialized.hpp
-  - sm90_mma_multistage_gmma_rs_warpspecialized.hpp
-  - sm90_mma_multistage_gmma_ss_warpspecialized.hpp
-  - sm90_mma_tma_gmma_rs_warpspecialized.hpp
-  - sm90_mma_tma_gmma_rs_warpspecialized_mixed_input.hpp
-  - sm90_mma_tma_gmma_ss.hpp
-  - sm90_mma_tma_gmma_ss_warpspecialized.hpp
-  */
+  // EA: The sm90 files inside include / cutlass / gemm / collective are:
+  /* - sm90_mma_array_tma_gmma_ss_warpspecialized.hpp
+     - sm90_mma_multistage_gmma_rs_warpspecialized.hpp
+     - sm90_mma_multistage_gmma_ss_warpspecialized.hpp
+     - sm90_mma_tma_gmma_rs_warpspecialized.hpp
+     - sm90_mma_tma_gmma_rs_warpspecialized_mixed_input.hpp
+     - sm90_mma_tma_gmma_ss.hpp
+     - sm90_mma_tma_gmma_ss_warpspecialized.hpp */
 
   // A PipelineState is a circular pipe index [.index()] and a pipe phase [.phase()]
   //   that flips each cycle through K_PIPE_MAX.
