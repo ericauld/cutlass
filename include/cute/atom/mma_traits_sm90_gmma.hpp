@@ -71,6 +71,7 @@ warpgroup_fence_operand(float& reg) {
   CUTE_STATIC_ASSERT(is_static<Layout>::value);
   if constexpr (is_same_v<typename Engine::value_type, float>) {
     auto f32_frg = recast<float>(frg);
+    // EA: If it is a tensor of floats, recast it to float?
     CUTE_UNROLL
     for (int i = 0; i < size(f32_frg); ++i) {
       warpgroup_fence_operand(f32_frg(i));
