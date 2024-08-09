@@ -127,6 +127,17 @@ gemm(Tensor<TD, DLayout>     && D,
   return gemm(D, A, B, C);
 }
 
+// EA: I haven't found the exact call chain, but I think the place that these
+// eventually call out to that reaches the ptx wrapper `fma` is include / cute /
+// atom / mma_traits.hpp, which in turn does things like 
+/*
+      detail::explode(MMA_Op::fma,
+                      rA, make_int_sequence<RegNumA>{},
+                      rB, make_int_sequence<RegNumB>{},
+                      rC, make_int_sequence<RegNumC>{},
+                      &(traits.accumulate_), seq<0>{});
+*/
+
 template <class MMA,
           class TA, class ALayout,
           class TB, class BLayout,

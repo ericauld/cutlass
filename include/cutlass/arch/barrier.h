@@ -245,10 +245,9 @@ public:
 #if CUDA_BARRIER_ENABLED
     uint32_t smem_addr = cute::cast_smem_ptr_to_uint(smem_ptr);
     asm volatile(
-        /* EA: Couple things I don't understand here:
-           - Why wrap in braces?
-           - Why only \n after the second line but no \t?
-        */
+        // EA:
+        // - Why wrap in braces?
+        // - Why only \n after the second line but no \t?
         "{\n\t"
         "mbarrier.init.shared::cta.b64 [%1], %0; \n"
         "}"
@@ -258,6 +257,8 @@ public:
     asm volatile ("brkpt;\n" ::);
 #endif
   }
+
+  // EA: What would the register be "burned" on?
 
   // Static version of wait - in case we don't want to burn a register
   CUTLASS_DEVICE
@@ -271,28 +272,28 @@ public:
         ".reg .pred       P1; \n\t"
         "LAB_WAIT: \n\t"
         "mbarrier.try_wait.parity.shared::cta.b64 P1, [%0], %1, %2; \n\t"
-        /* EA: Interesting that here they call arg %1 `phase`, and give it
-           uint32_t type, but in the ptx manual they always call it
-           `phaseParity` and explicitly say that its valid values are only 0 and
-           1. (Sec 9.7.12.15.16)
-           
-           The parameter names:
-           waitComplete <- P1
-           and 
-           suspendTimeHint <- ticks
+        //  EA: Interesting that here they call arg %1 `phase`, and give it
+        //  uint32_t type, but in the ptx manual they always call it
+        //  `phaseParity` and explicitly say that its valid values are only 0 and
+        //  1. (ptx Sec 9.7.12.15.16)
+        //  
+        //  The parameter names:
+        //  waitComplete <- P1
+        //  and 
+        //  suspendTimeHint <- ticks
 
-          > mbarrier.test_wait is a non-blocking instruction which tests for the
-          > completion of the phase.
+        // > mbarrier.test_wait is a non-blocking instruction which tests for
+        // > the completion of the phase.
 
-          > mbarrier.try_wait is a potentially blocking instruction which tests
-          > for the completion of the phase. If the phase is not complete, the
-          > executing thread may be suspended. Suspended thread resumes
-          > execution when the specified phase completes OR before the phase
-          > completes following a system-dependent time limit. The optional
-          > 32-bit unsigned integer operand suspendTimeHint specifies the time
-          > limit, in nanoseconds, that may be used for the time limit instead
-          > of the system-dependent limit.
-        */
+        // > mbarrier.try_wait is a potentially blocking instruction which tests
+        // > for the completion of the phase. If the phase is not complete, the
+        // > executing thread may be suspended. Suspended thread resumes
+        // > execution when the specified phase completes OR before the phase
+        // > completes following a system-dependent time limit. The optional
+        // > 32-bit unsigned integer operand suspendTimeHint specifies the time
+        // > limit, in nanoseconds, that may be used for the time limit instead
+        // > of the system-dependent limit.
+
         "@P1 bra DONE; \n\t"
         "bra     LAB_WAIT; \n\t"
         "DONE: \n\t"
@@ -300,9 +301,8 @@ public:
         :
         : "r"(smem_addr), "r"(phase), "r"(ticks));
 
-        /* EA: So generally, did all this stuff predate the C++ interface to
-           `mbarrier`, and they never consolidated it?
-        */
+        // EA: Did all this stuff predate the C++ interface to `mbarrier`, and
+        // they never consolidated it?
 
 #elif defined(__CUDA_ARCH__)
     asm volatile ("brkpt;\n" ::);

@@ -40,8 +40,12 @@
 
 /* Specialized functionality for a ComposedLayout of the form
  *   InvolutionFn o Offset o LayoutB
- * where the InvolutionFn is a Swizzle<B,M,S> and is not linear (hence the need for the Offset).
- *
+ * where the InvolutionFn is a Swizzle<B,M,S> and is not linear (hence the need for the Offset).*/
+
+// EA: I don't understand that sentence. Why would the swizzle not being linear
+// mean you needed an offset? Maybe you want to arrange zero to map to zero?
+
+/*
  * Because these are specializations for core functions of ComposedLayout, these Swizzle Layouts
  * provide similar functionality to Layout including tiling, partitioning,
  * coordinate-to-index mapping and layout manipulations, but are not considered "normal" layouts.
@@ -49,7 +53,11 @@
  *
  * Furthermore, each of these specializations uses Swizzle<>-specific knowledge in its implementation and
  * attempts to decay itself to a normal-layout with dynamic or static strides when certain slicing conditions
- * are met. This is possible by determining the subdomain of the Swizzle<> function that is identity and
+ * are met. */
+
+// EA: OK, 
+
+/* This is possible by determining the subdomain of the Swizzle<> function that is identity and
  * testing if LayoutB's codomain is contained within it. In general, MizedBits is used as the Offset to track
  * statically-vs-dynamically known bits in the Offset to improve the decay to static or dynamic normal layouts.
  */
@@ -90,8 +98,16 @@ transfer_swizzle(Layout<OldShape,OldStride> const& old_layout,
   // which is a new swizzle identifier for S?, the new swizzle
 
   // Projections of the swizzle layout for composition, P
-  auto swizzle_only_zy = make_layout(make_shape (Int<(1 << M)>{}, Int<(1 << B)>{}, Int<(1 << (abs(S)-B))>{}, Int<(1 <<  B        )>{}, Int<1>{}),
-                                     make_stride(       Int<0>{}, Int<(1 << M)>{},                 Int<0>{}, Int<(1 << (M+abs(S)))>{}, Int<0>{}));
+  auto swizzle_only_zy = make_layout(make_shape (Int<(1 << M)>{}, 
+                                        Int<(1 << B)>{}, 
+                                        Int<(1 << (abs(S)-B))>{}, 
+                                        Int<(1 <<  B        )>{}, 
+                                        Int<1>{}),
+                                     make_stride(Int<0>{}, 
+                                        Int<(1 << M)>{},
+                                        Int<0>{}, 
+                                        Int<(1 << (M+abs(S)))>{}, 
+                                        Int<0>{}));
 
   // Compose with the tile to get the swizzle projection, P o L  [The Z and Y contributing portions of L]
   auto layout_only_zy       = composition(swizzle_only_zy, old_layout);
@@ -283,8 +299,15 @@ slice_and_offset(Coord const& coord, ComposedLayout<Swizzle<B,M,S>,Offset,Layout
       auto stride_hi = detail::make_swizzle_strides(Z > Y, Z, Y, offset_only_zy, make_int_sequence<B>{});
 
       // Construct a (dynamic) layout that we can perform the composition with
-      auto swizzle_layout = make_layout(make_shape (Int<(1 << M)>{}, repeat<B>(Int<2>{}), Int<(1 << (abs(S)-B))>{}, repeat<B>(Int<2>{}), Int<                  1>{}),
-                                        make_stride(Int<       1>{},           stride_lo, Int<(1 <<      (M+B))>{},          stride_hi , Int<(1 << (M+B+abs(S)))>{}));
+      auto swizzle_layout = make_layout(make_shape (Int<(1 << M)>{},
+                                            repeat<B>(Int<2>{}),
+                                            Int<(1 << (abs(S)-B))>{},
+                                            repeat<B>(Int<2>{}), Int<1>{}),
+                                        make_stride(Int<       1>{},
+                                            stride_lo,
+                                            Int<(1 <<      (M+B))>{},
+                                            stride_hi ,
+                                            Int<(1 << (M+B+abs(S)))>{}));
 
       // Decay to a normal layout with offset
       return cute::make_tuple(composition(swizzle_layout, sliced_layout),
@@ -563,8 +586,14 @@ logical_product(Layout<Shape,Stride>                          const& layout,
   // which is a new swizzle identifier for S?, the new swizzle
 
   // Projections of the swizzle layout for composition, P
-  auto swizzle_only_zy = make_layout(make_shape (Int<(1 << M)>{}, Int<(1 << B)>{}, Int<(1 << (abs(S)-B))>{}, Int<(1 <<  B        )>{}, Int<1>{}),
-                                     make_stride(       Int<0>{}, Int<(1 << M)>{},                 Int<0>{}, Int<(1 << (M+abs(S)))>{}, Int<0>{}));
+  auto swizzle_only_zy = make_layout(make_shape (Int<(1 << M)>{}, 
+                                        Int<(1 << B)>{}, 
+                                        Int<(1 << (abs(S)-B))>{}, 
+                                        Int<(1 <<  B        )>{}, Int<1>{}),
+                                     make_stride(       Int<0>{}, 
+                                        Int<(1 << M)>{},
+                                        Int<0>{},
+                                        Int<(1 << (M+abs(S)))>{}, Int<0>{}));
 
   // Compose with the tiler to get the swizzle projection, P o L  [The Z and Y contributing portions of L]
   auto layout_only_zy       = composition(swizzle_only_zy, tiler.layout_b());

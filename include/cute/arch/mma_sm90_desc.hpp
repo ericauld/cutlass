@@ -68,6 +68,7 @@ CUTE_HOST_DEVICE char const* to_string(LayoutType const& t) {
   return nullptr;
 }
 
+// EA: What is __CUDACC_RTC__?
 #if !defined(__CUDACC_RTC__)
 // Output operator for all enums in this namespace
 CUTE_HOST std::ostream& operator<<(std::ostream& os, LayoutType const& t) {
@@ -84,6 +85,8 @@ CUTE_HOST std::ostream& operator<<(std::ostream& os, LayoutType const& t) {
 } // end namespace GMMA
 
 union GmmaDescriptor
+// EA: I don't think I understand the point of making it a union, instead of
+// just making it be the anonymous struct below.
 {
   CUTE_HOST_DEVICE constexpr
   GmmaDescriptor() noexcept : desc_(0) {}

@@ -37,15 +37,43 @@
 
 namespace cute {
 
+// EA: "dependent use"?
+
 // Fence between the async destination accumulators of GMMA & source for their dependent use
 template <class Engine, class Layout>
 CUTE_HOST_DEVICE
 void
 warpgroup_fence_operand(Tensor<Engine, Layout>& frg) {
+// EA: Note there are two overloads of `warpgroup_fence_operand` in arch /
+// mma_sm90_gmma.hpp, on lines 83 and 94, oe accepting `uint32_t & reg` and the
+// other `float & reg`. I don't understand the point of this
+
+/*
+CUTE_HOST_DEVICE
+void
+warpgroup_fence_operand(uint32_t& reg) {
+  // MSVC emits a build error for 'asm volatile'
+  // even if it only occurs in a __device__ function.
+  // This prevents the error.
+#if defined(__CUDA_ARCH__)
+  asm volatile("" : "+r"(reg) :: "memory");
+#endif
+}
+
+CUTE_HOST_DEVICE
+void
+warpgroup_fence_operand(float& reg) {
+#if defined(__CUDA_ARCH__)
+  asm volatile("" : "+f"(reg) :: "memory");
+#endif
+}
+*/
   CUTE_STATIC_ASSERT(is_static<Layout>::value);
   if constexpr (is_same_v<typename Engine::value_type, float>) {
     auto f32_frg = recast<float>(frg);
+    // EA: If it is a tensor of floats, recast it to float?
     CUTE_UNROLL
+    // EA: I'd like to read more about CUTE_UNROLL
     for (int i = 0; i < size(f32_frg); ++i) {
       warpgroup_fence_operand(f32_frg(i));
     }
@@ -66,11 +94,18 @@ namespace GMMA {
 // Common layouts for GMMA Shared Memory //
 ///////////////////////////////////////////
 
+// EA: Recall the way the Swizzle<End, Len, Off> args work is there are E bits
+// at the end untouched, then a portion of length L which is set by xor'ing its
+// starting value with a same-length mask set offset Off bits to the left of it.
+// (They may overlap if |O| < L, and also O can be negative)
+
 // M|N-major GMMA layouts in units of bits
 using Layout_MN_INTER_Atom_Bits = ComposedLayout<Swizzle<0,4,3>, smem_ptr_flag, Layout<Shape< _128,_8>,Stride<_1, _128>>>;
 using Layout_MN_SW32_Atom_Bits  = ComposedLayout<Swizzle<1,4,3>, smem_ptr_flag, Layout<Shape< _256,_8>,Stride<_1, _256>>>;
 using Layout_MN_SW64_Atom_Bits  = ComposedLayout<Swizzle<2,4,3>, smem_ptr_flag, Layout<Shape< _512,_8>,Stride<_1, _512>>>;
 using Layout_MN_SW128_Atom_Bits = ComposedLayout<Swizzle<3,4,3>, smem_ptr_flag, Layout<Shape<_1024,_8>,Stride<_1,_1024>>>;
+// EA: How does the 0, 1, 2, 3 go along with the 128, 256, 512, 1024, i.e.
+// 16-byte, 32-byte, 64-byte, 128-byte?
 
 // K-major GMMA layouts in units of bits
 using Layout_K_INTER_Atom_Bits  = ComposedLayout<Swizzle<0,4,3>, smem_ptr_flag, Layout<Shape<_8, _128>,Stride< _128,_1>>>;
@@ -116,6 +151,8 @@ using Layout_SW128_Atom = typename conditional<tnsp == GMMA::Major::MN,
                                                Layout_MN_SW128_Atom<Type>,
                                                Layout_K_SW128_Atom<Type>>::type;
 
+// EA: What does that mean, "position-dependent swizzle"?
+
 //
 // Tensor (position-dependent swizzle) to LayoutType utility
 //
@@ -129,6 +166,7 @@ layout_type(Tensor<Engine, Layout<Shape,Stride>> const&)
                 "Expected uint128_t type in LayoutType conversion.");
 
   using Swizzle = get_swizzle_t<Engine>;
+  // EA: Interesting, so the swizzle, if present, lives on the Engine
   constexpr int B = Swizzle::num_bits;
   constexpr int M = Swizzle::num_base;
   constexpr int S = Swizzle::num_shft;
@@ -154,13 +192,26 @@ layout_type(Tensor<Engine, Layout<Shape,Stride>> const&)
 * ///////////////////////////////
 * // make_gmma_desc<Major::MN> //
 * ///////////////////////////////
-* Each GmmaDescriptor Major-MN describes a canonical layout of the form
-*
-* LayoutType::INTERLEAVE   : Swizzle<0,4,3> o smem_ptr o ((T,1,m),(8,k)):((1,T,SBO),(1T,LBO))
+* Each GmmaDescriptor Major-MN describes a canonical layout of the form */
+
+// EA: I'm a little confused because I thought wgmma was always k-major. But
+// then below, the `ABLayout` used for all smem arguments is MN-major:
+
+// template <int M, int K>
+// using ABLayout = 
+//    Layout<Shape <_128, Shape<Int<M>, Int<K>>>,
+//           Stride< _0 ,           _1, Int<M>>>>
+
+// And above, the `GMMA::Layout X XXX Atom <value type>` have both MN- and K-major
+
+/*LayoutType::INTERLEAVE   : Swizzle<0,4,3> o smem_ptr o ((T,1,m),(8,k)):((1,T,SBO),(1T,LBO))
 * LayoutType::B32          : Swizzle<1,4,3> o smem_ptr o ((T,2,m),(8,k)):((1,T,LBO),(2T,SBO))
 * LayoutType::B64          : Swizzle<2,4,3> o smem_ptr o ((T,4,m),(8,k)):((1,T,LBO),(4T,SBO))
-* LayoutType::B128         : Swizzle<3,4,3> o smem_ptr o ((T,8,m),(8,k)):((1,T,LBO),(8T,SBO))
-*
+* LayoutType::B128         : Swizzle<3,4,3> o smem_ptr o ((T,8,m),(8,k)):((1,T,LBO),(8T,SBO)) */
+
+// EA: Why is a thing called `smem_ptr` in the place usually called `offset`?
+
+/*
 * where
 *   T  : sizeof(uint128_t) / sizeof(value_type)
 *   m  : integer in [1,16] corresponding to GMMA shape
@@ -172,8 +223,12 @@ layout_type(Tensor<Engine, Layout<Shape,Stride>> const&)
 * For example,
 *   auto smem_layout = tile_to_shape(Layout_MN_SW128_Atom<value_type>{}, Shape<_128,_64>{});
 * is guaranteed to be accepted by make_gmma_desc<Major::MN> for appropriate value_type.
-*
-* //////////////////////////////
+*/
+
+// EA: These `GMMA::Layout MN XXX Atom <value type>` are the second big group of
+// top-level defs in this file
+
+/* //////////////////////////////
 * // make_gmma_desc<Major::K> //
 * //////////////////////////////
 * Each GmmaDescriptor Major-K describes a canonical layout of the form
@@ -188,6 +243,8 @@ layout_type(Tensor<Engine, Layout<Shape,Stride>> const&)
 *   auto smem_layout = tile_to_shape(Layout_K_SW128_Atom<value_type>{}, Shape<_128,_64>{});
 * is guaranteed to be accepted by make_gmma_desc<Major::K> for appropriate value_type.
 */
+
+// EA: This function is used only on line 430 of this file
 template <GMMA::Major MajorMode, class TEngine, class TLayout>
 CUTE_HOST_DEVICE constexpr
 GmmaDescriptor
@@ -208,6 +265,7 @@ make_gmma_desc(Tensor<TEngine,TLayout> const& tensor)
 
   // Start address (4LSB not included)
   uint32_t start_address = cast_smem_ptr_to_uint(raw_pointer_cast(u128_tensor.data()));
+  // EA: Interesting, the smem ptr is a 32-bit int; I'd have thought 64
   desc.bitfield.start_address_ = static_cast<uint16_t>(start_address >> 4);
 
   constexpr uint8_t base_offset = 0;
@@ -361,6 +419,23 @@ template <GMMA::Major>
 struct smem_desc : DescriptorIterator {};
 
 } // end namespace GMMA
+
+// EA: Note the `_desc` below, this is not just creating a tensor in smem; it's
+// creating a matrix descriptor for wgmma. 
+/*
+~/r/cup/cutlass $ ggrep -rnl smem_desc
+include/cute/atom/mma_traits_sm90_gmma.hpp
+include/cute/arch/copy_sm90_desc.hpp
+include/cutlass/conv/collective/sm90_implicit_gemm_gmma_ss_warpspecialized.hpp
+include/cutlass/gemm/collective/sm90_mma_tma_gmma_ss.hpp
+include/cutlass/gemm/collective/sm90_mma_tma_gmma_rs_warpspecialized_mixed_input.hpp
+include/cutlass/gemm/collective/sm90_mma_tma_gmma_rs_warpspecialized.hpp
+include/cutlass/gemm/collective/sm90_mma_tma_gmma_ss_warpspecialized_fp8.hpp
+include/cutlass/gemm/collective/sm90_mma_multistage_gmma_rs_warpspecialized.hpp
+include/cutlass/gemm/collective/sm90_mma_tma_gmma_ss_warpspecialized.hpp
+include/cutlass/gemm/collective/sm90_mma_multistage_gmma_ss_warpspecialized.hpp
+include/cutlass/gemm/collective/sm90_mma_array_tma_gmma_ss_warpspecialized.hpp
+*/
 
 // Customization point for creating a GMMA::smem_desc Tensor
 template <GMMA::Major MajorMode>
