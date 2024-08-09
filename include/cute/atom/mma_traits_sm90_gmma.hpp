@@ -243,6 +243,8 @@ layout_type(Tensor<Engine, Layout<Shape,Stride>> const&)
 *   auto smem_layout = tile_to_shape(Layout_K_SW128_Atom<value_type>{}, Shape<_128,_64>{});
 * is guaranteed to be accepted by make_gmma_desc<Major::K> for appropriate value_type.
 */
+
+// EA: This function is used only on line 430 of this file
 template <GMMA::Major MajorMode, class TEngine, class TLayout>
 CUTE_HOST_DEVICE constexpr
 GmmaDescriptor
@@ -417,6 +419,23 @@ template <GMMA::Major>
 struct smem_desc : DescriptorIterator {};
 
 } // end namespace GMMA
+
+// EA: Note the `_desc` below, this is not just creating a tensor in smem; it's
+// creating a matrix descriptor for wgmma. 
+/*
+~/r/cup/cutlass $ ggrep -rnl smem_desc
+include/cute/atom/mma_traits_sm90_gmma.hpp
+include/cute/arch/copy_sm90_desc.hpp
+include/cutlass/conv/collective/sm90_implicit_gemm_gmma_ss_warpspecialized.hpp
+include/cutlass/gemm/collective/sm90_mma_tma_gmma_ss.hpp
+include/cutlass/gemm/collective/sm90_mma_tma_gmma_rs_warpspecialized_mixed_input.hpp
+include/cutlass/gemm/collective/sm90_mma_tma_gmma_rs_warpspecialized.hpp
+include/cutlass/gemm/collective/sm90_mma_tma_gmma_ss_warpspecialized_fp8.hpp
+include/cutlass/gemm/collective/sm90_mma_multistage_gmma_rs_warpspecialized.hpp
+include/cutlass/gemm/collective/sm90_mma_tma_gmma_ss_warpspecialized.hpp
+include/cutlass/gemm/collective/sm90_mma_multistage_gmma_ss_warpspecialized.hpp
+include/cutlass/gemm/collective/sm90_mma_array_tma_gmma_ss_warpspecialized.hpp
+*/
 
 // Customization point for creating a GMMA::smem_desc Tensor
 template <GMMA::Major MajorMode>

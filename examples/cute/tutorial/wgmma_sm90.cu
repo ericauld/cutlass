@@ -203,8 +203,10 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
   //   Because the MMA reads directly from SMEM and the fragments are descriptors rather than registers,
   //     there is no need for copy(tCsA, tCrA) in the mainloop.
 
-  // EA: Calling these functions `make_fragment_*` seems like a lie, might
-  // invite mistakes...
+  // EA: Calling these functions `make_fragment_A,B` seems like a lie, might
+  // invite mistakes. If I look at `make_fragment_A` in include / cute / atom /
+  // mma_atom.hpp, I don't see anything specific to wgmma that calls out to make
+  // a matrix descriptor
 
   ThrMMA thr_mma = mma.get_thread_slice(threadIdx.x);
   Tensor tCsA = thr_mma.partition_A(sA);                               // (MMA,MMA_M,MMA_K,PIPE)
@@ -254,6 +256,10 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
 
     // MMAs to cover 1 K_TILE
     warpgroup_arrive();
+
+    // EA: Am I a little surprised that this is just `warpgroup_arrive`, with no
+    // reference to which barrier or producer / consumer?
+
     gemm(mma, tCrA(_,_,_,read_pipe), tCrB(_,_,_,read_pipe), tCrC);     // (V,M) x (V,N) => (V,M,N)
     // EA: Really (V,M) x (V,N) => (V,M,N)? No reduction axis? Seems odd; also
     // there are three underscores in the tensors on the left, not two.
