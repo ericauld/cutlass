@@ -105,7 +105,8 @@ using Layout_MN_SW32_Atom_Bits  = ComposedLayout<Swizzle<1,4,3>, smem_ptr_flag, 
 using Layout_MN_SW64_Atom_Bits  = ComposedLayout<Swizzle<2,4,3>, smem_ptr_flag, Layout<Shape< _512,_8>,Stride<_1, _512>>>;
 using Layout_MN_SW128_Atom_Bits = ComposedLayout<Swizzle<3,4,3>, smem_ptr_flag, Layout<Shape<_1024,_8>,Stride<_1,_1024>>>;
 // EA: How does the 0, 1, 2, 3 go along with the 128, 256, 512, 1024, i.e.
-// 16-byte, 32-byte, 64-byte, 128-byte?
+// 16-byte, 32-byte, 64-byte, 128-byte? So recall it goes <Width, End, Offet>,
+// so the 0, 1, 2, 3 are the widths of the mask in units of bits...
 
 // K-major GMMA layouts in units of bits
 using Layout_K_INTER_Atom_Bits  = ComposedLayout<Swizzle<0,4,3>, smem_ptr_flag, Layout<Shape<_8, _128>,Stride< _128,_1>>>;
