@@ -99,6 +99,10 @@ namespace GMMA {
 // starting value with a same-length mask set offset Off bits to the left of it.
 // (They may overlap if |O| < L, and also O can be negative)
 
+// EA: Wait, why'd I think this was the param order? Now I think it's 
+// (width, end, offset), but that means the <0,4,3> below does nothing, 
+// right?
+
 // M|N-major GMMA layouts in units of bits
 using Layout_MN_INTER_Atom_Bits = ComposedLayout<Swizzle<0,4,3>, smem_ptr_flag, Layout<Shape< _128,_8>,Stride<_1, _128>>>;
 // EA: Wait, a width-0 swizzle? Isn't that nothing?
