@@ -90,38 +90,56 @@
 #include "helper.h"
 
 using namespace cute;
-using ProblemShape = cutlass::gemm::GroupProblemShape<Shape<int,int,int>>; // <M,N,K> per group
-using ElementA = cutlass::float_e4m3_t;                          // Element type for A matrix operand
-using ElementB = cutlass::float_e5m2_t;                          // Element type for B matrix operand
-using ElementC = cutlass::half_t;                                // Element type for C and D matrix operands
+using ProblemShape = cutlass::gemm::GroupProblemShape<Shape<int,int,int>>; 
+// <M,N,K> per group
+using ElementA = cutlass::float_e4m3_t;                          
+// Element type for A matrix operand
+using ElementB = cutlass::float_e5m2_t;                          
+// Element type for B matrix operand
+using ElementC = cutlass::half_t;                                
+// Element type for C and D matrix operands
 
 #if defined(CUTLASS_ARCH_MMA_MODIFIABLE_TMA_SM90_SUPPORTED)
 
-/////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
 /// GEMM kernel configurations
-/////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
 
 // A matrix configuration
-using         LayoutA     = cutlass::layout::RowMajor;                      // Layout type for A matrix operand
-constexpr int AlignmentA  = 128 / cutlass::sizeof_bits<ElementA>::value;    // Alignment of A matrix in units of elements (up to 16 bytes)
+using         LayoutA     = cutlass::layout::RowMajor;                      
+// Layout type for A matrix operand
+constexpr int AlignmentA  = 128 / cutlass::sizeof_bits<ElementA>::value;    
+// Alignment of A matrix in units of elements (up to 16 bytes)
 
 // B matrix configuration
-using         LayoutB     = cutlass::layout::ColumnMajor;                   // Layout type for B matrix operand
-constexpr int AlignmentB  = 128 / cutlass::sizeof_bits<ElementB>::value;    // Alignment of B matrix in units of elements (up to 16 bytes)
+using         LayoutB     = cutlass::layout::ColumnMajor;                   
+// Layout type for B matrix operand
+constexpr int AlignmentB  = 128 / cutlass::sizeof_bits<ElementB>::value;    
+// Alignment of B matrix in units of elements (up to 16 bytes)
 
 // C/D matrix configuration
-using         LayoutC     = cutlass::layout::ColumnMajor;                   // Layout type for C and D matrix operands
-constexpr int AlignmentC  = 128 / cutlass::sizeof_bits<ElementC>::value;    // Alignment of C matrix in units of elements (up to 16 bytes)
+using         LayoutC     = cutlass::layout::ColumnMajor;                   
+// Layout type for C and D matrix operands
+constexpr int AlignmentC  = 128 / cutlass::sizeof_bits<ElementC>::value;    
+// Alignment of C matrix in units of elements (up to 16 bytes)
 
 // Core kernel configurations
-using ElementAccumulator  = float;                                          // Element type for internal accumulation
-using ArchTag             = cutlass::arch::Sm90;                            // Tag indicating the minimum SM that supports the intended feature
-using OperatorClass       = cutlass::arch::OpClassTensorOp;                 // Operator class tag
-using TileShape           = Shape<_256,_128,_128>;                          // Threadblock-level tile size
-using ClusterShape        = Shape<_2,_2,_1>;                                // Shape of the threadblocks in a cluster
-using StageCountType = cutlass::gemm::collective::StageCountAuto;           // Stage count maximized based on the tile size
-using KernelSchedule = cutlass::gemm::KernelPtrArrayTmaWarpSpecializedCooperativeFP8FastAccum; // Kernel to launch
-using EpilogueSchedule = cutlass::epilogue::PtrArrayNoSmemWarpSpecialized;                     // Epilogue to launch
+using ElementAccumulator  = float;                                          
+// Element type for internal accumulation
+using ArchTag             = cutlass::arch::Sm90;                            
+// Tag indicating the minimum SM that supports the intended feature
+using OperatorClass       = cutlass::arch::OpClassTensorOp;                 
+// Operator class tag
+using TileShape           = Shape<_256,_128,_128>;                          
+// Threadblock-level tile size
+using ClusterShape        = Shape<_2,_2,_1>;                                
+// Shape of the threadblocks in a cluster
+using StageCountType = cutlass::gemm::collective::StageCountAuto;           
+// Stage count maximized based on the tile size
+using KernelSchedule = cutlass::gemm::KernelPtrArrayTmaWarpSpecializedCooperativeFP8FastAccum; 
+// Kernel to launch
+using EpilogueSchedule = cutlass::epilogue::PtrArrayNoSmemWarpSpecialized;                     
+// Epilogue to launch
 
 using CollectiveEpilogue = typename cutlass::epilogue::collective::CollectiveBuilder<
     cutlass::arch::Sm90, cutlass::arch::OpClassTensorOp,
@@ -210,9 +228,9 @@ cutlass::DeviceAllocation<ElementAccumulator> block_beta;
 
 #endif // defined(CUTLASS_ARCH_MMA_MODIFIABLE_TMA_SM90_SUPPORTED)
 
-/////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////
 /// Testbed utility types
-/////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////
 
 // Command line options parsing
 struct Options {
@@ -350,7 +368,9 @@ struct Options {
   }
 
   /// Compute performance in GFLOP/s
-  double gflops(double runtime_s, std::vector<typename ProblemShape::UnderlyingProblemShape> problem_sizes_host) const
+  double gflops(
+    double runtime_s, 
+    std::vector<typename ProblemShape::UnderlyingProblemShape> problem_sizes_host) const
   {
     // Number of real-valued multiply-adds
     uint64_t fmas = uint64_t();
@@ -478,8 +498,12 @@ void initialize(const Options &options) {
     ptr_B_host.at(i) = block_B.get() + offset_B.at(i);
     ptr_C_host.at(i) = block_C.get() + offset_C.at(i);
     ptr_D_host.at(i) = block_D.get() + offset_D.at(i);
-    alpha_host.push_back((options.alpha == FLT_MAX) ? static_cast<ElementAccumulator>((rand() % 5) + 1) : options.alpha);
-    beta_host.push_back((options.beta == FLT_MAX) ? static_cast<ElementAccumulator>(rand() % 5) : options.beta);
+    alpha_host.push_back((options.alpha == FLT_MAX) ? 
+                          static_cast<ElementAccumulator>((rand() % 5) + 1) : 
+                          options.alpha);
+    beta_host.push_back((options.beta == FLT_MAX) ? 
+                         static_cast<ElementAccumulator>(rand() % 5) : 
+                         options.beta);
     ptr_alpha_host.at(i) = block_alpha.get() + i;
     ptr_beta_host.at(i) = block_beta.get() + i;
   }
@@ -521,7 +545,9 @@ void initialize(const Options &options) {
 }
 
 /// Populates a Gemm::Arguments structure from the given commandline options
-typename Gemm::Arguments args_from_options(const Options &options, bool host_problem_shapes_available = true)
+typename Gemm::Arguments args_from_options(
+  const Options &options, 
+  bool host_problem_shapes_available = true)
 {
   cutlass::KernelHardwareInfo hw_info;
   // Change device_id to another value if you are running on a machine with multiple GPUs and wish
@@ -596,7 +622,10 @@ bool verify(const Options &options) {
     CUDA_CHECK(cudaDeviceSynchronize());
 
     // Check if output from CUTLASS kernel and reference kernel are equal or not
-    passed &= cutlass::reference::device::BlockCompareEqual(block_ref_D.get() + offset_D.at(i), block_D.get() + offset_D.at(i), M * N);
+    passed &= cutlass::reference::device::BlockCompareEqual(
+      block_ref_D.get() + offset_D.at(i), 
+      block_D.get() + offset_D.at(i), 
+      M * N);
     #if 0
     std::cout << "Group: " << i << " Status: " << passed << std::endl;
     #endif
@@ -656,7 +685,8 @@ int run(Options &options, bool host_problem_shapes_available = true)
     // Compute average setup and runtime and GFLOPs.
     float elapsed_ms       = timer.elapsed_millis();
     result.avg_runtime_ms  = double(elapsed_ms) / double(options.iterations);
-    result.gflops          = options.gflops(result.avg_runtime_ms / 1000.0, options.problem_sizes_host);
+    result.gflops          = options.gflops(result.avg_runtime_ms / 1000.0, 
+                                            options.problem_sizes_host);
 
     std::cout << "  Problem Sizes, Alpha, Beta " << std::endl;
     for (int32_t i = 0; i < options.groups; ++i) {

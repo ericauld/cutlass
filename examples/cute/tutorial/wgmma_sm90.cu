@@ -206,7 +206,32 @@ gemm_device(ProblemShape shape_MNK, CtaTiler cta_tiler,
   // EA: Calling these functions `make_fragment_A,B` seems like a lie, might
   // invite mistakes. If I look at `make_fragment_A` in include / cute / atom /
   // mma_atom.hpp, I don't see anything specific to wgmma that calls out to make
-  // a matrix descriptor
+  // a matrix descriptor. Here is the entirety of make_fragment_A:
+  /*
+  template <class ATensor>
+  CUTE_HOST_DEVICE static constexpr
+  auto
+  make_fragment_A(ATensor&& atensor)
+  {
+    // Check that this tensor is likely already partitioned
+    CUTE_STATIC_ASSERT_V(rank(atensor) >= Int<3>{});  // VMK
+    CUTE_STATIC_ASSERT_V(size<0>(atensor) == size<1>(LayoutA_TV{}));
+
+    if constexpr (has_dereference<FrgTypeA>::value) {
+      // EA: Is this describing the wgmma case?
+
+      // If the intended FrgTypeA is a view (of the current tensor), forward the whole
+      static_assert(is_same<ValTypeA, typename remove_cvref_t<ATensor>::value_type>::value
+                      , "Expecting ValTypeA type");
+      return make_tensor<FrgTypeA>(static_cast<ATensor&&>(atensor));
+    } else {
+      // Else, the intended FrgTypeA is a value type, construct a new tensor with a fragment layout
+      return make_fragment_like<FrgTypeA>(atensor);
+    }
+
+    CUTE_GCC_UNREACHABLE;
+  }
+  */
 
   ThrMMA thr_mma = mma.get_thread_slice(threadIdx.x);
   Tensor tCsA = thr_mma.partition_A(sA);                               // (MMA,MMA_M,MMA_K,PIPE)
@@ -339,6 +364,7 @@ gemm_nt(int m, int n, int k,
   // Create TMA Atoms with the desired copy operation on the source and destination
   Copy_Atom tmaA = make_tma_atom(SM90_TMA_LOAD{}, mA, sA(_,_,0), make_shape(bM,bK));
   Copy_Atom tmaB = make_tma_atom(SM90_TMA_LOAD{}, mB, sB(_,_,0), make_shape(bN,bK));
+  // EA: This is the "experimental" one, recall; the older one is `make_tma_copy`
 
   //
   // Setup and Launch
@@ -352,6 +378,8 @@ gemm_nt(int m, int n, int k,
                round_up(size(ceil_div(n, bN)), dimCluster.y));
   cutlass::ClusterLaunchParams params = {dimGrid, dimBlock, dimCluster, smem_size};
 
+  // EA: Weird, why do this? Also, how would the system choose how much mem to
+  // allocate for a `void*`?
   void const* kernel_ptr = reinterpret_cast<void const*>(
                               &gemm_device<decltype(prob_shape), decltype(cta_tiler),
                                            TA, decltype(sA), decltype(tmaA),

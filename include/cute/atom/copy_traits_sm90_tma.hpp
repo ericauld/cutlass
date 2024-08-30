@@ -45,15 +45,7 @@
 namespace cute
 {
 
-// EA: Interesting things here: 
-//   - tma_partition
-//   Interesting things mentioned here
-//   - Swizzle<B, M, S>
-//   - Tma "box shape" (what's this?)
-
-// EA: Maybe you could argue this source code is slightly less (important,
-// primary) than atom / mma_traits_sm90_gmma.hpp, since this is also exposed in
-// ordinary Cuda C++ outside Cutlass, but that one isn't
+// EA: What's the Tma "box shape"?
 
 template <class GmemTmaBasisStrides_, class TmaGmemBasis_, class TmaSwizzle_>
 struct AuxTmaParams {
@@ -760,7 +752,12 @@ auto
 construct_tma_gbasis(Tensor<GEngine,GLayout> const& gtensor,       // The original GMEM Tensor
                      Layout<SShape,SStride>  const& slayout,       // The layout of SMEM
                      Layout<VShape,VStride>  const& cta_v_map)     // smem_idx to hier gmode
-{
+{                                                                  // EA: ?
+  // EA: Recall in the exprimental one make_tma_atom
+  /*
+  cta_v_map <- cta_v_tile <- make_identity_layout(shape(gtensor)).compose(cta_tiler);
+  */
+
   //
   // TMA parameter checking
   //
@@ -948,7 +945,10 @@ fill_tma_gmem_shape_stride(Copy_Traits<Op,Bits,Aux>  const& tma_traits,
                                     gmem_prob_shape, gmem_prob_stride);
 }
 
-// EA: A `sidx2gmode`?
+// EA: A `sidx2gmode`? Note at line ~780 we have
+/*
+auto sidx2gmode_full = coalesce(composition(cta_v_map, inv_smem_layout));
+*/
 
 // Use a sidx2gmode to read through the GMEM tensor
 //   and construct a TMA Descriptor for the resulting instruction
@@ -961,14 +961,29 @@ template <class TmaInternalType,
           int B, int M, int S>
 CUTE_HOST_RTC
 auto
-// EA: It's `auto`...the thing it returns is `cute::make_tuple (tma_desc,
-// AuxParams{gmem_tma_basis_stride})`
+
+// EA: It's return type is auto...it returns
+/*
+cute::make_tuple (tma_desc, AuxParams{gmem_tma_basis_stride})
+*/
+
 make_tma_copy_desc(Tensor<GEngine,GLayout> const& gtensor,         // The original GMEM Tensor
                    Layout<TShape,TStride>  const& tma_gbasis,      // TMA mode -> GMEM mode mapping
-                   // EA: TMA mode -> GMEM mode mapping...what does that mean?
+
+                                                                   // EA: What does that mean?
+                                                                   // Maybe it allows you to apply a
+                                                                   // permutation of the modes? Do the
+                                                                   // "TMA modes" have a rigid API one
+                                                                   // would want to skirt?
+
                    Swizzle<B,M,S>          const& swizzle,         // Swizzle fn on smem_idx
                    uint32_t                       num_multicast)   // The number of CTAs in multicasting
 {
+  // EA: Maybe the way it creates the tma descriptor using the tma_gbasis and
+  // the smem swizzle can be informative about how the gbasis bears the
+  // information needed for the descriptor, like box size, tensor stride,
+  // traversal stride, the stuff talked about in ptx sec 5
+
   //
   // TMA desc creation
   //
@@ -1011,9 +1026,6 @@ make_tma_copy_desc(Tensor<GEngine,GLayout> const& gtensor,         // The origin
     stride = (stride * sizeof_bits_v<TmaInternalType>) / 8;
   }
 
-  // EA: I didn't know about this 0b1111 notation, binary I guess. Meta says the
-  // notation was introduced in C++14 and it is an `int`.
-
   // Assert the byte strides. Tma Descriptor uses byte strides
   assert((gmem_prob_stride[1]) < (uint64_t(1) << 40));       // Stride must be max 2^40
   assert((gmem_prob_stride[1] & 0b1111) == 0);               // Stride must be multiple of 16B (128b)
@@ -1033,8 +1045,8 @@ make_tma_copy_desc(Tensor<GEngine,GLayout> const& gtensor,         // The origin
   // The smem box is simply given by the sizes of the modes in tma_gbasis
   for_each(make_seq<tma_dim>{}, [&](auto i) {
     smem_box_shape[i] *= size<i>(tma_gbasis);
-    // EA: Recall `size` takes the product of the shape entries of a tuple...in
-    // this case a sub-tuple which is the ith mode
+    // EA: Recall `size<i>` multiplies together the entries if ith mode isn't
+    // simple
   });
   // Finally, truncate the tma box by the num_multicast
   for (uint32_t i = tma_dim-1, multicast = num_multicast; multicast > 1; --i) {
@@ -1077,6 +1089,8 @@ make_tma_copy_desc(Tensor<GEngine,GLayout> const& gtensor,         // The origin
     //
 
   #if (__CUDACC_VER_MAJOR__ >= 12) && !defined(__CUDACC_RTC__)
+  // EA: __CUDACC_RTC__ is a macro to distinguish between ordinary, offline,
+  // nvcc compilation, and runtime compilation with nvrtc(1)
 
     CUtensorMapDataType     tma_format      = TMA::to_CUtensorMapDataType<TmaInternalType>();
     CUtensorMapInterleave   tma_interleave  = CU_TENSOR_MAP_INTERLEAVE_NONE;
@@ -1086,18 +1100,18 @@ make_tma_copy_desc(Tensor<GEngine,GLayout> const& gtensor,         // The origin
     // TMA smem swizzle type
     CUtensorMapSwizzle smem_swizzle = TMA::to_CUtensorMapSwizzle(get_tma_swizzle_bits(swizzle));
     CUresult result = cuTensorMapEncodeTiled(
-        &tma_desc,
-        tma_format,
-        tma_dim,
-        gmem_address,
-        gmem_prob_shape.data(),
-        gmem_prob_stride.data() + 1,  // gmem_prob_stride[0] implicitly 1
-        smem_box_shape.data(),
-        smem_box_stride.data(),
-        tma_interleave,
-        smem_swizzle,
-        tma_l2Promotion,
-        tma_oobFill);
+        &tma_desc,    // tensorMap
+        tma_format,   // tensorDataType
+        tma_dim,      // tensorRank
+        gmem_address, // globalAddress
+        gmem_prob_shape.data(), // globalDim
+        gmem_prob_stride.data() + 1,  // gmem_prob_stride[0] implicitly 1  // globalStrides
+        smem_box_shape.data(),  // boxDim
+        smem_box_stride.data(), // elementStrides
+        tma_interleave,         // interleave
+        smem_swizzle,           // swizzle
+        tma_l2Promotion,        // l2Promotion
+        tma_oobFill);           // oobFill
 
     if (result != CUDA_SUCCESS) {
       std::cerr << "TMA Desc Addr:   " << &tma_desc
@@ -1178,14 +1192,23 @@ make_tma_copy_atom(CopyOp, // EA: CopyOp is used on line 1202 - it's wrapped by 
                    SLayout                 const& slayout,       // CTA Tile of SMEM, potentially swizzled
                    uint32_t                const& num_multicast, // The number of CTAs involved in multicasting
                    Layout<VShape,VStride>  const& cta_v_map)     // V: CTA val idx -> gmem mode
-{
+{                                                                // EA: val idx -> gmem *mode*?
+  // EA: in the "experimental" one, make_tma_atom, we have
+  /*
+  num_multicast <- size(cluster_size)
+  cta_v_map <- cta_v_tile <- make_identity_layout(shape(gtensor)).compose(cta_tiler);
+  */
+
   //
   // TMA truncated layout
   //
+  
+  // EA: "Truncated", interesting
 
   auto smem_swizzle = get_swizzle_portion(slayout);
   auto smem_layout  = get_nonswizzle_portion(slayout);
 
+  // EA: construct_tma_gbasis is on line 752
   auto tma_gbasis = detail::construct_tma_gbasis<TmaInternalType>(gtensor, smem_layout, cta_v_map);
 
   //
@@ -1226,7 +1249,7 @@ template <class TmaInternalType,
           class SLayout,
           class TShape, class TStride,
           class VShape, class VStride>
-CUTE_HOST_RTC // EA: What's "Host Rtc"?
+CUTE_HOST_RTC
 auto
 make_tma_copy_tiled(CopyOp                  const& copy_op,
                     Tensor<GEngine,GLayout> const& gtensor,     // Full GMEM Tensor
@@ -1244,6 +1267,8 @@ make_tma_copy_tiled(CopyOp                  const& copy_op,
   //
   // Construct the TiledCopy
   //
+
+  // EA: Hmmm I expected `tma_desc_` to be set somewhere. Maybe in a subroutine
 
   [[maybe_unused]] auto cta_tiler = product_each(shape(cta_v_map));
 
@@ -1336,8 +1361,6 @@ make_tma_copy_tiled(CopyOp                  const& copy_op,
     // cuTENSOR 4D
     auto layout = make_shape(make_shape(32,40),make_shape(make_shape(8,8),656)); */
 
-    // EA: Interesting, a hierarchical 4D tensor
- 
  /* // GMEM
     auto cta_tile    = make_shape(_128{},make_shape(_32{},_2{}));                
     // GMEM Tiling:
@@ -1356,12 +1379,6 @@ make_tma_copy_tiled(CopyOp                  const& copy_op,
  * Usage:
      Tensor mA = tma_a.get_tma_tensor(make_shape(M,N)) */
 
-  // EA: Here `tma_a` is what...the grid_constant thing? (EA: That's the
-  // `Copy_Atom` btw). 
-  
-  // EA: Maybe I should look at the `get_tma_tensor` method. (EA: There are
-  // overloads in this file at lines 180, 291, 406, 499)
-
   /* // (M,N) TMA coord tensor
      Tensor gA = local_tile(mA, cta_tile, cta_coord);          
      // (BLK_M,BLK_N) TMA coord tensor for this CTA
@@ -1378,7 +1395,61 @@ make_tma_copy_tiled(CopyOp                  const& copy_op,
      copy(tma.with(barrier, mcast_mask), tAgA, tAsA);          
      // copy with supporting TMA params
  */
+
+
+// EA: So `make_tma_atom` is called in wgmma_sm90.cu from host to get the grid
+// constant Copy_Atom, which holds the tma descriptor. `make_tma_atom` is about
+// 50 lines down and it's called "experimental", I wonder why
+
+// Other possibly interesting things to look at:
+// - get_tma_tensor, used in the example above...would that typically be called
+//   from host or device? (It's marked __host__ __device__, overloads in this
+//   file at lines 180, 291, 406, 499)
+
+// Call chains:
+
+// make_tma_atom -> make_tma_copy_atom -> ... (see below)
+
+// make_tma_copy -> make_tma_copy_tiled -> make_tma_copy_atom -> 
+// (make_tma_copy_desc, construct_tma_gbasis)
+
+// One interesting thing about this latter call chain is that cta_v_map is
+// passed all the way from make_tma_copy to construct_tma_basis
+
+/*
+Interesting part of make_tma_copy_atom:
+
+( tma_gbasis           <- construct_tma_gbasis,
+  tma_desc, aux_params <- make_tma_copy_desc <TmaInternalType> (
+                              gtensor,
+                              tma_gbasis,
+                              smem_swizzle,
+                              num_multicast)
+
+  constexpr int num_bits_per_tma = size(tma_gbasis) * sizeof_bits_v<TmaInternalType>;
+
+  using Traits = Copy_Traits<CopyOp, cute::C<num_bits_per_tma>, decltype(aux_params)>;
+  using Atom   = Copy_Atom<Traits, typename GEngine::value_type>;
+
+  Traits tma_traits{tma_desc, aux_params};
+  return Atom{tma_traits};
+
+make_tma_copy_desc (line ~959)
+
+
+*/
+// EA: In advance of looking at make_tma_copy_desc, I want to look for what is
+// the point of the gbasis thing, since that's not mentioned in the args of the
+// tensor map constructor, at the link below.
+// https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__TENSOR__MEMORY.html#group__CUDA__TENSOR__MEMORY
+
+// EA: I think one issue for me rn is that I have not seen any examples of
+// `make_tma_copy` used, tho it is in many if not all of the include / cutlass /
+// gemm / collective / sm90* stuff
+
 template <class TmaInternalType = void,
+          // EA: What is this internal type thing? It's passed down the call
+          // chain like three whole levels, as a template parameter each time
           class CopyOp,
           class GEngine, class GLayout,
           class SLayout,
@@ -1409,7 +1480,17 @@ make_tma_copy(CopyOp                  const& copy_op,
     return detail::make_tma_copy_tiled<TmaType>(copy_op,
                                                 gtensor, slayout,
                                                 cta_t_tile, cta_v_tile);
-    // EA: `make tma copy tiled` is on line 1228
+    // EA: `make tma copy tiled` is on line 1228. The latter two parameters are
+    // called
+    /*
+    cta_t_map <- cta_t_tile
+    cta_v_map <- cta_v_tile
+    
+    ...and they're described as...
+
+    cta_t_map // T: CTA thr idx -> logical TMA tid
+    cta_v_map // V: CTA val idx -> gmem mode
+    */
   }
 }
 
@@ -1447,6 +1528,9 @@ make_tma_copy(CopyOp                  const& copy_op,
 // Experimental Make TMA Atom and Partitioner
 ///////////////////////////////////
 
+// EA: This is the one that's called outside the kernel in wgmma_sm90.cu to get
+// the Copy_Atom which evidently holds the tma descriptor.
+
 template <class TmaInternalType = void,
           class CopyOp,
           class GEngine, class GLayout,
@@ -1470,8 +1554,6 @@ make_tma_atom(CopyOp                  const& copy_op,
                                              size(cluster_size), cta_v_tile);
 }
 
-// EA: What's a "VectorCopy Partitioner"?
-
 /*
 Called from kernel as
 auto [tAgA, tAsA] = tma_partition(tma_a, Int<0>{}, Layout<_1>{},
@@ -1480,6 +1562,8 @@ auto [tAgA, tAsA] = tma_partition(tma_a, Int<0>{}, Layout<_1>{},
   auto [tBgB, tBsB] = tma_partition(tma_b, Int<0>{}, Layout<_1>{},
                                     group_modes<0,2>(sB), group_modes<0,2>(gB));  // (TMA,k) and (TMA,PIPE)
 */
+
+// EA: What's a "VectorCopy Partitioner"?
 
 // The "VectorCopy Partitioner" for TMA
 template <class... Args,

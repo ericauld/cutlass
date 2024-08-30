@@ -41,6 +41,17 @@
 namespace cute
 {
 
+// EA: If you look a few lines down, you can see
+
+/*
+Swizzle <W, E, Shift>
+
+yyy_mask = (W 1's at end) << E + max(0, Shift)
+zzz_mask = (W 1's at end) << E - min(0, Shift)
+
+x |-> x xor ((x & yyy_mask) >> Shift)
+*/
+
 // A generic Swizzle functor
 /* 0bxxxxxxxxxxxxxxxYYYxxxxxxxZZZxxxx
  *                               ^--^ MBase is the number of least-sig bits to keep constant

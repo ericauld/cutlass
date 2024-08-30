@@ -37,6 +37,10 @@
 
 namespace cute {
 
+// EA: See also in connection w this file: 
+// - arch / mma_sm90_desc.hpp
+// - arch / mma_sm90_gmma.hpp
+
 // EA: "dependent use"?
 
 // Fence between the async destination accumulators of GMMA & source for their dependent use
@@ -45,7 +49,7 @@ CUTE_HOST_DEVICE
 void
 warpgroup_fence_operand(Tensor<Engine, Layout>& frg) {
 // EA: Note there are two overloads of `warpgroup_fence_operand` in arch /
-// mma_sm90_gmma.hpp, on lines 83 and 94, oe accepting `uint32_t & reg` and the
+// mma_sm90_gmma.hpp, on lines 83 and 94, one accepting `uint32_t & reg` and the
 // other `float & reg`. I don't understand the point of this
 
 /*
@@ -73,7 +77,6 @@ warpgroup_fence_operand(float& reg) {
     auto f32_frg = recast<float>(frg);
     // EA: If it is a tensor of floats, recast it to float?
     CUTE_UNROLL
-    // EA: I'd like to read more about CUTE_UNROLL
     for (int i = 0; i < size(f32_frg); ++i) {
       warpgroup_fence_operand(f32_frg(i));
     }
@@ -94,24 +97,24 @@ namespace GMMA {
 // Common layouts for GMMA Shared Memory //
 ///////////////////////////////////////////
 
-// EA: Recall the way the Swizzle<End, Len, Off> args work is there are E bits
-// at the end untouched, then a portion of length L which is set by xor'ing its
-// starting value with a same-length mask set offset Off bits to the left of it.
-// (They may overlap if |O| < L, and also O can be negative)
+// EA: Isn't it surprising that these aren't templated on n, since the smem
+// layouts are like (64,n,16)? Also why does the ptx manual not seem to
+// reference the mn-major / k-major distinction?
 
-// EA: Wait, why'd I think this was the param order? Now I think it's 
-// (width, end, offset), but that means the <0,4,3> below does nothing, 
-// right?
+// EA: Oh, OK, so this is the layout of the *core matrices*
+
+// EA: Recall the description in ptx 9.7.16.5.1.2: "Matrices in shared memory
+// are organized into a number of smaller matrices called core matrices. Each
+// core matrix has 8 rows or columns and the size of each row is 16 bytes. The
+// core matrices occupy contiguous space in shared memory."
 
 // M|N-major GMMA layouts in units of bits
 using Layout_MN_INTER_Atom_Bits = ComposedLayout<Swizzle<0,4,3>, smem_ptr_flag, Layout<Shape< _128,_8>,Stride<_1, _128>>>;
-// EA: Wait, a width-0 swizzle? Isn't that nothing?
 using Layout_MN_SW32_Atom_Bits  = ComposedLayout<Swizzle<1,4,3>, smem_ptr_flag, Layout<Shape< _256,_8>,Stride<_1, _256>>>;
 using Layout_MN_SW64_Atom_Bits  = ComposedLayout<Swizzle<2,4,3>, smem_ptr_flag, Layout<Shape< _512,_8>,Stride<_1, _512>>>;
 using Layout_MN_SW128_Atom_Bits = ComposedLayout<Swizzle<3,4,3>, smem_ptr_flag, Layout<Shape<_1024,_8>,Stride<_1,_1024>>>;
 // EA: How does the 0, 1, 2, 3 go along with the 128, 256, 512, 1024, i.e.
-// 16-byte, 32-byte, 64-byte, 128-byte? So recall it goes <Width, End, Offet>,
-// so the 0, 1, 2, 3 are the widths of the mask in units of bits...
+// 16-byte, 32-byte, 64-byte, 128-byte? 
 
 // K-major GMMA layouts in units of bits
 using Layout_K_INTER_Atom_Bits  = ComposedLayout<Swizzle<0,4,3>, smem_ptr_flag, Layout<Shape<_8, _128>,Stride< _128,_1>>>;
@@ -200,24 +203,10 @@ layout_type(Tensor<Engine, Layout<Shape,Stride>> const&)
 * ///////////////////////////////
 * Each GmmaDescriptor Major-MN describes a canonical layout of the form */
 
-// EA: I'm a little confused because I thought wgmma was always k-major. But
-// then below, the `ABLayout` used for all smem arguments is MN-major:
-
-// template <int M, int K>
-// using ABLayout = 
-//    Layout<Shape <_128, Shape<Int<M>, Int<K>>>,
-//           Stride< _0 ,           _1, Int<M>>>>
-
-// And above, the `GMMA::Layout X XXX Atom <value type>` have both MN- and K-major
-
 /*LayoutType::INTERLEAVE   : Swizzle<0,4,3> o smem_ptr o ((T,1,m),(8,k)):((1,T,SBO),(1T,LBO))
 * LayoutType::B32          : Swizzle<1,4,3> o smem_ptr o ((T,2,m),(8,k)):((1,T,LBO),(2T,SBO))
 * LayoutType::B64          : Swizzle<2,4,3> o smem_ptr o ((T,4,m),(8,k)):((1,T,LBO),(4T,SBO))
-* LayoutType::B128         : Swizzle<3,4,3> o smem_ptr o ((T,8,m),(8,k)):((1,T,LBO),(8T,SBO)) */
-
-// EA: Why is a thing called `smem_ptr` in the place usually called `offset`?
-
-/*
+* LayoutType::B128         : Swizzle<3,4,3> o smem_ptr o ((T,8,m),(8,k)):((1,T,LBO),(8T,SBO))
 * where
 *   T  : sizeof(uint128_t) / sizeof(value_type)
 *   m  : integer in [1,16] corresponding to GMMA shape
@@ -265,17 +254,30 @@ make_gmma_desc(Tensor<TEngine,TLayout> const& tensor)
   // Result
   GmmaDescriptor desc;
 
+  // EA: Recall the matrix-descriptor-encode function
+  /*      matrix-descriptor-encode(x) = (x & 0x3FFFF) >> 0x4     */
+
+  // is applied to the starting address, the lbo, and the sbo. It zeros out all
+  // but the first 18 bits, then shifts right by 4. NB `start`, `lbo`, `sbo` are
+  // each stored in 14-bit fields
+
+  // EA: Hmm...weird...casting the LAYOUT_TYPE to a uint8_t
+
   // Layout type
   constexpr GMMA::LayoutType LAYOUT_TYPE = GMMA::layout_type(u128_tensor);
   desc.bitfield.layout_type_ = uint8_t(LAYOUT_TYPE);
 
   // Start address (4LSB not included)
   uint32_t start_address = cast_smem_ptr_to_uint(raw_pointer_cast(u128_tensor.data()));
-  // EA: Interesting, the smem ptr is a 32-bit int; I'd have thought 64
+  // EA: This 4-bit right shift is what we expect, because the
+  // matrix-descriptor-encode function takes the `start`, `lbo`, `sbo` and kills
+  // all but bits [0 .. 18), then shifts right by 4, leaving a 14-bit bitfield
   desc.bitfield.start_address_ = static_cast<uint16_t>(start_address >> 4);
 
   constexpr uint8_t base_offset = 0;
   desc.bitfield.base_offset_ = base_offset;
+
+  // EA: Why organize it this way, instead of a switch?
 
   // LayoutType meta
   constexpr int W = LAYOUT_TYPE == GMMA::LayoutType::INTERLEAVE ? 1 :
@@ -532,6 +534,37 @@ using ABLayout       = Layout<Shape <_128,Shape <Int<M>,Int<K>>>,
                               Stride<  _0,Stride<    _1,Int<M>>>>;
 
 } // namespace GMMA
+
+// EA: The weird thing here is that I don't see anything in these layouts about
+// the core matrices. So in the ABLayout<M, K> it's (M, K) : (1, M) when I'd
+// think, based on the description in ptx 9.7.16.5.1.2, it would be
+/*   A ~ (8,8),(8  ,2) : (1,8),(64,512) (not positive about the inner or outer
+                                         strides, but the inner mode should be
+                                         contiguous)
+     B ~ (8,8),(N/8,2) : (1,8),(64, 8N)
+*/
+// Oh, OK, after looking at the doc 0t_mma_atom.md:
+
+// > GMMA atoms that consume A and B sources directly from shared memory are a
+// > bit interesting. The GMMA Descriptor is constructed on an entire tile of A
+// > and/or B data in shared memory rather than being partitioned by threads.
+// > That is, every thread sees the entire tile of data and the tile is not
+// > reordered so that the descriptor can be constructed on it. In ALayout form,
+// > this can be expressed
+/*
+// (T128,V64x8) -> (M64,K16)
+using ALayout = Layout<Shape <_128, Shape <_64,_16>>,
+                       Stride<  _0, Stride< _1,_64>>>;
+*/
+// > That is, all threads are mapped the to (m,k) = (0,0) = 0 element and the
+// > values (and shape of the values) remains unchanged. The GMMA Descriptor
+// > Constructor can then inspect the (M,K) layout of this data and create an
+// > appropriate GMMA Descriptor or produce an error message saying the data is
+// > in an invalid layout for GMMA.
+
+// EA: This still seems not to regard the core matrices. In their example we're
+// looking at (64,16), which is the amount of data handled by an entire atom,
+// while the core matrices are (8, 8) subtiles of this one.
 
 template <GMMA::Major tnspA, GMMA::Major tnspB, GMMA::ScaleIn scaleA, GMMA::ScaleIn scaleB>
 struct MMA_Traits<SM90_64x8x16_F16F16F16_SS<tnspA, tnspB, scaleA, scaleB>>

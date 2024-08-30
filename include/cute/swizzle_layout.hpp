@@ -42,8 +42,10 @@
  *   InvolutionFn o Offset o LayoutB
  * where the InvolutionFn is a Swizzle<B,M,S> and is not linear (hence the need for the Offset).*/
 
-// EA: I don't understand that sentence. Why would the swizzle not being linear
-// mean you needed an offset? Maybe you want to arrange zero to map to zero?
+// EA: I don't understand that. Why does the swizzle being non-linear
+// necessitate the offset?
+
+// EA: NB below, "specializations for core functions of ComposedLayout"
 
 /*
  * Because these are specializations for core functions of ComposedLayout, these Swizzle Layouts
@@ -53,11 +55,9 @@
  *
  * Furthermore, each of these specializations uses Swizzle<>-specific knowledge in its implementation and
  * attempts to decay itself to a normal-layout with dynamic or static strides when certain slicing conditions
- * are met. */
-
-// EA: OK, 
-
-/* This is possible by determining the subdomain of the Swizzle<> function that is identity and
+ * are met.
+ *
+ * This is possible by determining the subdomain of the Swizzle<> function that is identity and
  * testing if LayoutB's codomain is contained within it. In general, MizedBits is used as the Offset to track
  * statically-vs-dynamically known bits in the Offset to improve the decay to static or dynamic normal layouts.
  */

@@ -128,7 +128,7 @@ struct MMA_Atom<MMA_Traits<Args...>>
   /* 
   EA: What does it mean "match it" in the registers? What opportunity is there?
   I guess look at how data in allocated in the registers...does it have to do
-  with the order in which the information is stored? I wouldn't think the TCIs
+  with the order in which the information is stored? I wouldn't think the TCOs
   gave us leeway over that.
   */
 
@@ -158,6 +158,8 @@ struct MMA_Atom<MMA_Traits<Args...>>
     CUTE_STATIC_ASSERT_V(size<0>(atensor) == size<1>(LayoutA_TV{}));
 
     if constexpr (has_dereference<FrgTypeA>::value) {
+      // EA: Is this describing the wgmma case?
+
       // If the intended FrgTypeA is a view (of the current tensor), forward the whole
       static_assert(is_same<ValTypeA, typename remove_cvref_t<ATensor>::value_type>::value
                       , "Expecting ValTypeA type");
@@ -175,6 +177,8 @@ struct MMA_Atom<MMA_Traits<Args...>>
   auto
   make_fragment_B(BTensor&& btensor)
   {
+    // EA: Recall B is different from A in that in wgmma, it must be in smem
+
     // Check that this tensor is likely already partitioned
     CUTE_STATIC_ASSERT_V(rank(btensor) >= Int<3>{});  // VNK
     CUTE_STATIC_ASSERT_V(size<0>(btensor) == size<1>(LayoutB_TV{}));
@@ -519,6 +523,8 @@ struct TiledMMA : MMA_Atom
 template <class TiledMMA, class ThrVMNK>
 struct ThrMMA : TiledMMA
 {
+  // EA: Do wgmma Tiled_MMAs ever reach this code?
+
   ThrVMNK thr_vmnk_;
 
   template <class CTensor>

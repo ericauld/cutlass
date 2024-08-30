@@ -46,6 +46,8 @@
  * as LayoutB defines the domain.
  */
 
+// EA: "applying each operation to LayoutB only as LayoutB defines the domain"? 
+
 namespace cute
 {
 
@@ -105,6 +107,8 @@ struct ComposedLayout : private cute::tuple<LayoutA, Offset, LayoutB>  // EBO fo
   // Mappings
   //
 
+  // EA: Here's the beef, right here
+
   // Map a logical coordinate to a linear index (Coord has no Underscore slice operators)
   // OR
   // Slice the layout and return the sublayout (Coord has an Underscore slice op)
@@ -132,6 +136,9 @@ struct ComposedLayout : private cute::tuple<LayoutA, Offset, LayoutB>  // EBO fo
   //
   // Compose
   //
+
+  // EA: It seems likely the `composition` they're calling is the one on line
+  // 1090 of layout.hpp
 
   template <class OtherLayout>
   CUTE_HOST_DEVICE constexpr
@@ -224,6 +231,8 @@ layout(ComposedLayout<A,O,B> const& clayout)
 {
   return composition(clayout.layout_a(), clayout.offset(), layout<Is...>(clayout.layout_b()));
 }
+
+// EA: Oh yeah, I should review `decltype(auto)`
 
 // Return the shape of a mode
 template <int... Is, class A, class O, class B>
