@@ -41,6 +41,7 @@
 #include <cute/algorithm/prefetch.hpp>
 
 #include <cute/numeric/integral_ratio.hpp>
+#include <cutlass/cuda_host_adapter.hpp>
 
 namespace cute
 {
@@ -1099,19 +1100,19 @@ make_tma_copy_desc(Tensor<GEngine,GLayout> const& gtensor,         // The origin
 
     // TMA smem swizzle type
     CUtensorMapSwizzle smem_swizzle = TMA::to_CUtensorMapSwizzle(get_tma_swizzle_bits(swizzle));
-    CUresult result = cuTensorMapEncodeTiled(
-        &tma_desc,    // tensorMap
-        tma_format,   // tensorDataType
-        tma_dim,      // tensorRank
-        gmem_address, // globalAddress
-        gmem_prob_shape.data(), // globalDim
-        gmem_prob_stride.data() + 1,  // gmem_prob_stride[0] implicitly 1  // globalStrides
-        smem_box_shape.data(),  // boxDim
-        smem_box_stride.data(), // elementStrides
-        tma_interleave,         // interleave
-        smem_swizzle,           // swizzle
-        tma_l2Promotion,        // l2Promotion
-        tma_oobFill);           // oobFill
+    CUresult result = CUTLASS_CUDA_DRIVER_WRAPPER_CALL(cuTensorMapEncodeTiled)(
+        &tma_desc,
+        tma_format,
+        tma_dim,
+        gmem_address,
+        gmem_prob_shape.data(),
+        gmem_prob_stride.data() + 1,  // gmem_prob_stride[0] implicitly 1
+        smem_box_shape.data(),
+        smem_box_stride.data(),
+        tma_interleave,
+        smem_swizzle,
+        tma_l2Promotion,
+        tma_oobFill);
 
     if (result != CUDA_SUCCESS) {
       std::cerr << "TMA Desc Addr:   " << &tma_desc
