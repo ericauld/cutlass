@@ -1,0 +1,156 @@
+CUTLASS Profiler
+usage:
+
+    cutlass_profiler [options]
+
+  --help
+
+  --mode=<string>                                  Cutlass profiler execution mode.
+                                                    --mode=profile    regular verification and profiling (default)
+                                                    --mode=dry_run    no kernels are launched or workspaces allocated
+                                                    --mode=enumerate  lists all operation kind and operations
+                                                    --mode=trace      executes a single device-side computation with
+                                                                       no other kernel launches
+
+  --device-info                                    Prints information on all GPUs present in the system
+
+  --operation=<operation_kind>                     CUTLASS operation to profile.
+
+  --kernels=<string_list>                          Filter operations by kernel names. For example, call all kernels with
+                                                   ("s1688" and "nt") or ("s844" and "tn" and "align8") in their
+                                                   operation name using --kernels="s1688*nt, s884*tn*align8"
+
+  --ignore-kernels=<string_list>                   Excludes kernels whose names match anything in this list.
+
+Device:
+  --device=<int>                                   CUDA Device ID
+
+    [0] - NVIDIA H100 80GB HBM3 - SM 9.0, 132 SMs @ 1980 MHz, L2 cache: 50 MB, Global Memory: 79 GB
+    [1] - NVIDIA H100 80GB HBM3 - SM 9.0, 132 SMs @ 1980 MHz, L2 cache: 50 MB, Global Memory: 79 GB
+    [2] - NVIDIA H100 80GB HBM3 - SM 9.0, 132 SMs @ 1980 MHz, L2 cache: 50 MB, Global Memory: 79 GB
+    [3] - NVIDIA H100 80GB HBM3 - SM 9.0, 132 SMs @ 1980 MHz, L2 cache: 50 MB, Global Memory: 79 GB
+    [4] - NVIDIA H100 80GB HBM3 - SM 9.0, 132 SMs @ 1980 MHz, L2 cache: 50 MB, Global Memory: 79 GB
+    [5] - NVIDIA H100 80GB HBM3 - SM 9.0, 132 SMs @ 1980 MHz, L2 cache: 50 MB, Global Memory: 79 GB
+    [6] - NVIDIA H100 80GB HBM3 - SM 9.0, 132 SMs @ 1980 MHz, L2 cache: 50 MB, Global Memory: 79 GB
+    [7] - NVIDIA H100 80GB HBM3 - SM 9.0, 132 SMs @ 1980 MHz, L2 cache: 50 MB, Global Memory: 79 GB
+
+  --compute-capability=<int>                       Override the compute capability.
+
+  --llc-capacity=<capacity in KiB>                 Capacity of last-level cache in kilobytes. If this is non-zero,
+                                                   profiling phases cycle through different input tensors to induce
+                                                   capacity misses in the L2.
+
+
+Initialization:
+  --initialization=<bool>                          Enables initialization (default: true). If false, device memory is
+                                                   not initialized after allocation.
+
+  --initialization-provider=<provider>             Selects initialization provider {host, device*}. (default: '*')
+
+  --dist=<distribution>                            Data distribution of input tensors {uniform*, gaussian, identity, sequential}
+                                                    --dist=uniform,min:<double>,max:<double>,scale:<integer>
+                                                    --dist=gaussian,mean:<double>,stddev:<double>,scale:<integer>,pnzA:<double>,pnzB:<double>,pnzC:<double>
+                                                    --dist=sequential,start:<double>,delta:<double>,scale:<integer>
+                                                    --dist=identity
+
+  --seed=<int>                                     Random number generator seed. Used to enforce deterministic
+                                                   initialization.
+
+
+Library:
+  --library-algo-mode=<mode>                       Indicates algorithm mode used to call libraries such as cuBLAS and cuDNN.
+                                                   mode={default*,matching,best}
+
+  --library-algos=<range-list>                     If --algorithm-mode=best, permits specifying a selection of algorithms.
+
+
+Profiling:
+  --workspace-count=<workspace count>              Number of discrete workspaces maintained to avoid cache-resident 
+                                                 If zero (default), the amount is chosen for each workload based on 
+                                                 capacity of the last-level cache.
+
+  --profiling-iterations=<iterations>              Number of iterations to profile each kernel. If zero, kernels
+                                                   are launched up to the profiling duration.
+
+  --warmup-iterations=<iterations>                 Number of iterations to execute each kernel prior to profiling.
+
+  --sleep-duration=<duration>                      Number of ms to sleep between profiling periods (ms).
+
+  --profiling-enabled=<bool>                       If true, profiling is actually conducted.
+
+
+Verification:
+  --verification-enabled=<bool>                    Whether to perform verification checks.
+
+  --epsilon=<error>                                Error threshold. Setting to zero (default) requires
+                                                   bit-level equivalence.
+
+  --nonzero-floor=<floor>                          Results whose absolute value is less than this quantity
+                                                   are treated as zero for comparisons.
+
+  --save-workspace=<string>                        Specifies when to save the GEMM inputs and results to the filesystem.
+                                                    --save-workspace=never      never save workspace (default)
+                                                    --save-workspace=incorrect  save workspace for incorrect results
+                                                    --save-workspace=always     always save workspace
+
+  --verification-providers=<providers>             List of providers used to verify result. (default: '*')
+                                                   Gemm verification-providers {cublas*}
+                                                   Conv2d verification-providers {cudnn*, device*, host}
+
+
+Report:
+  --append=<bool>                                  If true, result is appended to possibly existing file. Otherwise, 
+                                                   any existing file is overwritten.
+
+  --output=<path>                                  Path to output file for machine readable results. Operation kind and '.csv' is appended.
+
+  --junit-output=<path>                            Path to junit output file for result reporting. Operation kind and '.junit.xml' is appended.
+
+  --print-kernel-before-running=<bool>                    Prints the name of the kernel being profiled before running the kernel.
+                                                   This is useful for determining which kernel is causing a run of the profiler to hang
+
+  --report-not-run=<bool>                          If true, reports the status of all kernels including those that
+                                                   do not satisfy the given arguments.
+
+  --tags=<column:tag,...>                          Inserts leading columns in output table and uniform values for each
+                                                   column. Useful for generating pivot tables.
+
+  --verbose=<bool>                                 Prints human-readable text to stdout. If false, nothing is written to stdout.
+
+  --sort-results=<bool>                            Sorts results (by flops-per-byte).
+
+
+About:
+  --version                                        CUTLASS @CUTLASS_VERSION@ built on Sep  1 2024 at 12:01:16 with commit @CUTLASS_REVISION@
+
+
+Operations:
+
+     gemm                                          General matrix-matrix product. D = alpha * A*B + beta * C
+     spgemm                                        Structured sparse GEMM. D = alpha * A*B + beta * C
+     conv2d                                        Conv2d operation. Output(Tensor4D) = alpha * Input(Tensor4D) * Filter(Tensor4D) + beta * Input(Tensor4D)
+     conv3d                                        Conv3d operation. Output(Tensor5D) = alpha * Input(Tensor5D) * Filter(Tensor5D) + beta * Input(Tensor5D)
+     rank_k                                        Rank-k Update. D = alpha * A*A^T + beta * C (symmetric) or D = alpha * A*A^H + beta * C (hermitian)
+     rank_2k                                       Rank 2k Update. D = alpha * (A*B^T + B*A^T) + beta * C (symmetric) or D = alpha * (A*B^H+B*A^H) + beta * C (hermitian)
+     trmm                                          Triangular Matrix-Multiplication. D = alpha * A * B or alpha * B * A
+     symm                                          Symmetric Matrix-Matrix Multiplication. D = alpha * A * B OR alpha * B * A + beta * C (where A is symmetric/hermitian)
+
+
+For details about a particular function, specify the function name with --help.
+
+Example:
+
+  $ cutlass_profiler --operation=Gemm --help
+
+  $ cutlass_profiler --operation=RankK --help
+
+  $ cutlass_profiler --operation=Trmm --help
+
+  $ cutlass_profiler --operation=Symm --help
+
+  $ cutlass_profiler --operation=Conv3d --help
+
+  $ cutlass_profiler --operation=Conv2d --help
+
+  $ cutlass_profiler --operation=SparseGemm --help
+
