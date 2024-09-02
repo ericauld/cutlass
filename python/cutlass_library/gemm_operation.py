@@ -399,9 +399,11 @@ ${compile_guard_end}
   #
   def emit(self, operation):
 
-    warp_shape = [operation.tile_description.threadblock_shape[idx] // operation.tile_description.warp_count[idx] for idx in range(3)]
+    warp_shape = [operation.tile_description.threadblock_shape[idx] // operation.tile_description.warp_count[idx] \
+                  for idx in range(3)]
 
-    epilogue_vector_length = int(min(operation.C.alignment * DataTypeSize[operation.C.element], 128) / DataTypeSize[operation.C.element])
+    epilogue_vector_length = int(min(operation.C.alignment * \
+                                DataTypeSize[operation.C.element], 128) / DataTypeSize[operation.C.element])
 
     residual = ''
 
@@ -795,7 +797,8 @@ ${compile_guard_end}
     if operation.tile_description.stages > 0:
       stage_count_string = f"cutlass::gemm::collective::StageCount<{str(operation.tile_description.stages)}>"
     else:
-      stage_count_string = f"cutlass::gemm::collective::StageCountAutoCarveout<static_cast<int>(sizeof(typename {str(operation.procedural_name())}_epilogue::SharedStorage))>"
+      stage_count_string = f"cutlass::gemm::collective::StageCountAutoCarveout<static_cast<int>\
+                      (sizeof(typename {str(operation.procedural_name())}_epilogue::SharedStorage))>"
 
     epi_tile_mn = "cutlass::epilogue::collective::EpilogueTileAuto"
 
@@ -815,9 +818,14 @@ ${compile_guard_end}
     else:
       epilogue_functor = self.epilogue_functor.emit_declaration()
     #
-    # Cutlass3x complex kernels' ElementA(B) is a tuple in collective mainloop builder, e.g. cute::tuple<Element, Transform>, Transform : cute::identity / cute::conjugate.
-    element_a = DataTypeTag[operation.A.element] if not operation.is_complex() else f"cute::tuple<{str(DataTypeTag[operation.A.element])},{str(ComplexTransformTag3x[operation.A.complex_transform])}>"
-    element_b = DataTypeTag[operation.B.element] if not operation.is_complex() else f"cute::tuple<{str(DataTypeTag[operation.B.element])},{str(ComplexTransformTag3x[operation.B.complex_transform])}>"
+    # Cutlass3x complex kernels' ElementA(B) is a tuple in collective mainloop builder, 
+    # e.g. cute::tuple<Element, Transform>, Transform : cute::identity / cute::conjugate.
+    element_a = DataTypeTag[operation.A.element] if not operation.is_complex() else \
+        f"cute::tuple<{str(DataTypeTag[operation.A.element])},\
+         {str(ComplexTransformTag3x[operation.A.complex_transform])}>"
+    element_b = DataTypeTag[operation.B.element] if not operation.is_complex() else \
+        f"cute::tuple<{str(DataTypeTag[operation.B.element])},\
+         {str(ComplexTransformTag3x[operation.B.complex_transform])}>"
     epilogue_schedule_type = EpilogueScheduleTag[operation.epilogue_schedule]
     values = {
       'operation_name': operation.procedural_name(),
@@ -840,9 +848,12 @@ ${compile_guard_end}
       'tile_shape_main_m': str(tile_shape_main_m),
       'tile_shape_main_n': str(tile_shape_main_n),
       'tile_shape_main_k': str(tile_shape_main_k),
-      'cluster_shape_m': 'cute::_' + str(operation.tile_description.cluster_shape[0]) if operation.tile_description.cluster_shape[0] > 0 else "int",
-      'cluster_shape_n': 'cute::_' + str(operation.tile_description.cluster_shape[1]) if operation.tile_description.cluster_shape[1] > 0 else "int",
-      'cluster_shape_k': 'cute::_' + str(operation.tile_description.cluster_shape[2]) if operation.tile_description.cluster_shape[2] > 0 else "int",
+      'cluster_shape_m': 'cute::_' + str(operation.tile_description.cluster_shape[0]) \
+        if operation.tile_description.cluster_shape[0] > 0 else "int",
+      'cluster_shape_n': 'cute::_' + str(operation.tile_description.cluster_shape[1]) \
+        if operation.tile_description.cluster_shape[1] > 0 else "int",
+      'cluster_shape_k': 'cute::_' + str(operation.tile_description.cluster_shape[2]) \
+        if operation.tile_description.cluster_shape[2] > 0 else "int",
       'instruction_shape_m': str(instruction_shape[0]),
       'instruction_shape_n': str(instruction_shape[1]),
       'instruction_shape_k': str(instruction_shape[2]),
@@ -914,7 +925,8 @@ ${compile_guard_end}
   #
   def emit(self, operation):
 
-    warp_shape = [operation.tile_description.threadblock_shape[idx] // operation.tile_description.warp_count[idx] for idx in range(3)]
+    warp_shape = [operation.tile_description.threadblock_shape[idx] // \
+       operation.tile_description.warp_count[idx] for idx in range(3)]
 
     # exchange and transpose A and B types, layouts, and complex transforms since the C layout is row-major
     transposed_layout_A = TransposedLayout[operation.A.layout]
@@ -1000,7 +1012,8 @@ ${compile_guard_end}
   #
   def emit(self, operation):
 
-    warp_shape = [operation.tile_description.threadblock_shape[idx] // operation.tile_description.warp_count[idx] for idx in range(3)]
+    warp_shape = [operation.tile_description.threadblock_shape[idx] // \
+      operation.tile_description.warp_count[idx] for idx in range(3)]
 
     # exchange and transpose A and B types, layouts, and complex transforms since the C layout is row-major
     transposed_layout_A = TransposedLayout[operation.A.layout]
@@ -1121,7 +1134,8 @@ ${compile_guard_end}
     if isinstance(operation.epilogue_functor, enum.Enum):
 
       epilogue_vector_length = \
-        min(operation.C.alignment * DataTypeSize[operation.C.element], 128) // DataTypeSize[operation.C.element]
+        min(operation.C.alignment * DataTypeSize[operation.C.element], 128) \
+        // DataTypeSize[operation.C.element]
 
       values = {
         'epilogue_vector_length': str(epilogue_vector_length),
