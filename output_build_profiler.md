@@ -5,6 +5,52 @@ cmake .. -DCUTLASS_NVCC_ARCHS=90a \
     -DCUTLASS_LIBRARY_KERNELS="cutlass3x*bf16*" \
     -DCUTLASS_ENABLE_CUBLAS=ON
 
+EA: Recall also the profiler command: 
+
+./tools/profiler/cutlass_profiler 
+     --operation=gemm 
+     --n=384 --m=106496 --k=16384 
+     --A=bf16:row --B=bf16:column --C=bf16:column 
+     --output=cutlass_profile_ffn1_384_transposed.csv
+
+The files in tools / library / src / reference are:
+
+conv2d.cu
+conv3d.cu
+conv_reference_operation.h
+gemm_e4m3a_e4m3out.cu
+gemm_e4m3a_e5m2out.cu
+gemm_e5m2a_e4m3out.cu
+gemm_e5m2a_e5m2out.cu
+gemm_fp32out.cu
+gemm_fp8in_bf16out.cu
+gemm_fp8in_fp16out.cu
+gemm_fp8in_fp32out.cu
+gemm_fp_mixed_input.cu
+gemm_fp_other.cu
+gemm_int4.cu
+gemm_int8_canonical.cu
+gemm_int8_interleaved_32.cu
+gemm_int8_interleaved_64.cu
+gemm_reference_operation.h
+initialize_reference_operations.cu
+
+The only one with bf16 in the title is `gemm_fp8in_bf16out.cu`. `grep -rn bf16
+tools` produces:
+
+tools/library/CMakeLists.txt:232:  src/reference/gemm_fp8in_bf16out.cu
+tools/library/src/util.cu:451:  {"bf16", "BF16", NumericTypeID::kBF16},
+tools/library/src/util.cu:456:  {"cbf16", "CBF16", NumericTypeID::kCBF16},
+tools/library/src/reduction/init_reduction_operations.cu:48:void initialize_reduce_add_linear_combination_f32_f32_bf16(Manifest &manifest);
+tools/library/src/reduction/init_reduction_operations.cu:60:  initialize_reduce_add_linear_combination_f32_f32_bf16(manifest);
+tools/library/src/reduction/reduction_device.cu:115:void initialize_reduce_add_linear_combination_f32_f32_bf16(Manifest &manifest) {
+tools/library/src/reduction/reduction_device.cu:135:  using Operation_reduce_add_linear_combination_f32_f32_bf16 = cutlass::reduction::device::ReduceSplitK<
+tools/library/src/reduction/reduction_device.cu:144:    Operation_reduce_add_linear_combination_f32_f32_bf16>(
+tools/library/src/reduction/reduction_device.cu:145:      "reduce_add_linear_combination_f32_f32_bf16"
+tools/library/src/reference/gemm_fp8in_bf16out.cu:49:void initialize_gemm_reference_operations_fp8in_bf16out(Manifest &manifest) {
+tools/library/src/reference/initialize_reference_operations.cu:55:void initialize_gemm_reference_operations_fp8in_bf16out(Manifest &manifest);
+tools/library/src/reference/initialize_reference_operations.cu:81:  initialize_gemm_reference_operations_fp8in_bf16out(manifest);
+
 -- CMake Version: 3.30.2
 -- CUTLASS 3.5.1
 -- CUDART: /usr/local/cuda/lib64/libcudart.so
@@ -38,6 +84,13 @@ cmake .. -DCUTLASS_NVCC_ARCHS=90a \
 -- Generating /scratch/ericauld/cutlass/build2/tools/library/cutlass_library_objs.unity.5eaaf7f6d096.cu
 
 -- Generating /scratch/ericauld/cutlass/build2/tools/library/cutlass_library_gemm_sm90_bf16_s64x128x16gemm_bf16_objs.unity.2b291eab7d04.cu
+
+sm90
+bf16 
+s 64 x 128 x 16
+
+# Generating...
+
 -- Generating /scratch/ericauld/cutlass/build2/tools/library/cutlass_library_gemm_sm90_bf16_s64x128x16gemm_bf16_objs.unity.04c39491e1bf.cu
 -- Generating /scratch/ericauld/cutlass/build2/tools/library/cutlass_library_gemm_sm90_bf16_s64x128x16gemm_bf16_objs.unity.e8209ad15d6f.cu
 -- Generating /scratch/ericauld/cutlass/build2/tools/library/cutlass_library_gemm_sm90_bf16_s64x128x16gemm_bf16_objs.unity.cb3e515a7a9f.cu
@@ -163,7 +216,7 @@ cmake .. -DCUTLASS_NVCC_ARCHS=90a \
 -- Generating done (0.5s)
 -- Build files have been written to: /scratch/ericauld/cutlass/build2
 
-cmake --build . -t cutlass_profiler -j 64
+# cmake --build . -t cutlass_profiler -j 64
 
 [  0%] Building CXX object tools/library/CMakeFiles/cutlass_library_objs.dir/src/manifest.cpp.o
 [  0%] Building CUDA object tools/library/CMakeFiles/cutlass_library_objs.dir/cutlass_library_objs.unity.a2ea0bb712b9.cu.o
@@ -346,8 +399,7 @@ cmake --build . -t cutlass_profiler -j 64
 [100%] Linking CXX executable cutlass_profiler
 [100%] Built target cutlass_profiler
 
-stderr:
-
+# stderr
 ptxas info    : (C7511) Potential Performance Loss: wgmma.mma_async instructions are serialized due to insufficient register resources for the wgmma pipeline in the function '_ZN7cutlass13device_kernelI126cutlass3x_sm90_tensorop_s64x128x16gemm_bf16_bf16_f32_f32_f32_256x128x64_1x2x1_0_nnn_align8_warpspecialized_pingpong_epi_nosmemEEvNT_6ParamsE'
 ptxas info    : (C7511) Potential Performance Loss: wgmma.mma_async instructions are serialized due to insufficient register resources for the wgmma pipeline in the function '_ZN7cutlass13device_kernelI128cutlass3x_sm90_tensorop_s64x128x16gemm_bf16_bf16_f32_bf16_bf16_256x128x64_1x2x1_0_nnn_align8_warpspecialized_pingpong_epi_nosmemEEvNT_6ParamsE'
 ptxas info    : (C7511) Potential Performance Loss: wgmma.mma_async instructions are serialized due to insufficient register resources for the wgmma pipeline in the function '_ZN7cutlass13device_kernelI117cutlass3x_sm90_tensorop_s64x128x16gemm_bf16_bf16_f32_f32_f32_256x128x64_2x1x1_0_nnn_align8_warpspecialized_epi_nosmemEEvNT_6ParamsE'
@@ -684,6 +736,7 @@ ptxas info    : (C7511) Potential Performance Loss: wgmma.mma_async instructions
             instantiation of "cutlass::reference::device::BlockForEach<Element, Func>::BlockForEach(Element *, size_t, Func::Params, int, int, cudaStream_t) [with Element=cutlass::int2b_t, Func=cutlass::reference::device::detail::RandomGaussianFunc<cutlass::int2b_t>]" at line 394
             instantiation of "void cutlass::reference::device::BlockFillRandomGaussian(Element *, size_t, uint64_t, cutlass::RealType<Element>::Type, cutlass::RealType<Element>::Type, int, cudaStream_t) [with Element=cutlass::int2b_t]" at line 1746
             instantiation of "void cutlass::reference::device::BlockFillRandom(Element *, size_t, uint64_t, cutlass::Distribution, cudaStream_t) [with Element=cutlass::int2b_t]" at line 613 of /scratch/ericauld/cutlass/tools/profiler/src/device_allocation.cu
+
 
 Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
 
