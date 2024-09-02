@@ -267,8 +267,8 @@ set(CUTLASS_ENABLE_DIRECT_CUDA_DRIVER_CALL OFF CACHE BOOL "Enable CUTLASS to dir
 
 # Kernel unified filter file
 
-# EA: "Kernel filter file", hmmm. Oh, maybe it just determines which kernels the
-# user actually wants to build
+# EA: How can I see what all the kernels are? So we build eg. 'cutlass3x*bf16*'.
+# I think tools / library / CMakeLists.txt might be a place to start looking.
 
 set(KERNEL_FILTER_FILE "" CACHE STRING "KERNEL FILTER FILE FULL PATH")
 
