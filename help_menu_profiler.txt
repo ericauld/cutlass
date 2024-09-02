@@ -1,3 +1,5 @@
+$ tools/profiler/cutlass_profiler --help
+
 CUTLASS Profiler
 usage:
 
