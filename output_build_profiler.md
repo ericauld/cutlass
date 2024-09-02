@@ -51,6 +51,10 @@ tools/library/src/reference/gemm_fp8in_bf16out.cu:49:void initialize_gemm_refere
 tools/library/src/reference/initialize_reference_operations.cu:55:void initialize_gemm_reference_operations_fp8in_bf16out(Manifest &manifest);
 tools/library/src/reference/initialize_reference_operations.cu:81:  initialize_gemm_reference_operations_fp8in_bf16out(manifest);
 
+grep -nw def python/cutlass_library/generator.py
+
+
+
 -- CMake Version: 3.30.2
 -- CUTLASS 3.5.1
 -- CUDART: /usr/local/cuda/lib64/libcudart.so
