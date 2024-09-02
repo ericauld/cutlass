@@ -96,6 +96,8 @@ The CUTLASS Instance Library contains instantiations of the above CUTLASS templa
 data types, block structure, and tile sizes. These instantiations are procedurally generated using a set of 
 scripts to span the design space.
 
+EA: I'm not sure I understand what this means. 
+
 ```
 tools/
   library/                   # static/dynamic library containing all kernel instantiations of interest
