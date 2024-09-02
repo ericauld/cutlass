@@ -10,21 +10,33 @@ cmake .. -DCUTLASS_NVCC_ARCHS=90a \
 -- CUDART: /usr/local/cuda/lib64/libcudart.so
 -- CUDA Driver: /usr/local/cuda/lib64/stubs/libcuda.so
 -- NVRTC: /usr/local/cuda/lib64/libnvrtc.so
--- Default Install Location: install
+
 -- Make cute::tuple be the new standard-layout tuple type
--- CUDA Compilation Architectures: 90a
+
 -- Enable caching of reference results in conv unit tests
 -- Enable rigorous conv problem sizes in conv unit tests
--- Using NVCC flags: --expt-relaxed-constexpr;-DCUTE_USE_PACKED_TUPLE=1;-DCUTLASS_TEST_LEVEL=0;-DCUTLASS_TEST_ENABLE_CACHED_RESULTS=1;-DCUTLASS_CONV_UNIT_TEST_RIGOROUS_SIZE_ENABLED=1;-DCUTLASS_DEBUG_TRACE_LEVEL=0;-Xcompiler=-Wconversion;-Xcompiler=-fno-strict-aliasing
--- CUTLASS Revision: fbc1bddc
+
+-- Using NVCC flags: --expt-relaxed-constexpr;
+                     -DCUTE_USE_PACKED_TUPLE=1;
+                     -DCUTLASS_TEST_LEVEL=0;
+                     -DCUTLASS_TEST_ENABLE_CACHED_RESULTS=1;
+                     -DCUTLASS_CONV_UNIT_TEST_RIGOROUS_SIZE_ENABLED=1;
+                     -DCUTLASS_DEBUG_TRACE_LEVEL=0;
+                     -Xcompiler=-Wconversion;
+                     -Xcompiler=-fno-strict-aliasing
+
 -- Configuring cublas ...
 -- cuBLAS: /usr/local/cuda/lib64/libcublas.so
 -- cuBLAS: /usr/local/cuda/include
 -- Configuring cuBLAS ... done.
+
 -- Generating /scratch/ericauld/cutlass/build2/tools/library/cutlass_library_objs.unity.a2ea0bb712b9.cu
 -- Generating /scratch/ericauld/cutlass/build2/tools/library/cutlass_library_objs.unity.0b0987e2b09f.cu
+
 -- Completed generation of library instances. See /scratch/ericauld/cutlass/build2/tools/library/library_instance_generation.log for more information.
+
 -- Generating /scratch/ericauld/cutlass/build2/tools/library/cutlass_library_objs.unity.5eaaf7f6d096.cu
+
 -- Generating /scratch/ericauld/cutlass/build2/tools/library/cutlass_library_gemm_sm90_bf16_s64x128x16gemm_bf16_objs.unity.2b291eab7d04.cu
 -- Generating /scratch/ericauld/cutlass/build2/tools/library/cutlass_library_gemm_sm90_bf16_s64x128x16gemm_bf16_objs.unity.04c39491e1bf.cu
 -- Generating /scratch/ericauld/cutlass/build2/tools/library/cutlass_library_gemm_sm90_bf16_s64x128x16gemm_bf16_objs.unity.e8209ad15d6f.cu
