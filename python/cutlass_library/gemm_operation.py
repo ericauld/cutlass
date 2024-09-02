@@ -491,9 +491,11 @@ ${compile_guard_end}
   #
   def emit(self, operation):
 
-    warp_shape = [operation.tile_description.threadblock_shape[idx] // operation.tile_description.warp_count[idx] for idx in range(3)]
+    warp_shape = [operation.tile_description.threadblock_shape[idx] \
+      // operation.tile_description.warp_count[idx] for idx in range(3)]
 
-    epilogue_vector_length = int(min(operation.C.alignment * DataTypeSize[operation.C.element], 128) / DataTypeSize[operation.C.element])
+    epilogue_vector_length = int(min(operation.C.alignment * \
+      DataTypeSize[operation.C.element], 128) / DataTypeSize[operation.C.element])
 
     residual = ''
 
