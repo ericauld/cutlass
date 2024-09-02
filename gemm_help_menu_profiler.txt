@@ -1,5 +1,13 @@
 $ tools/profiler/cutlass_profiler --operation=Gemm --help
 
+EA: Also recall the suggested profiler command: 
+
+./tools/profiler/cutlass_profiler 
+     --operation=gemm 
+     --n=384 --m=106496 --k=16384 
+     --A=bf16:row --B=bf16:column --C=bf16:column 
+     --output=cutlass_profile_ffn1_384_transposed.csv
+
 GEMM
 
   [enum]      --gemm_kind                                       Variant of GEMM (universal, gemm, planar_complex, planar_complex_array)
