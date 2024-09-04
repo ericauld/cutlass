@@ -59,6 +59,22 @@ _LOGGER = logging.getLogger(__name__)
 ###################################################################################################
 
 #
+'''
+EA: 
+Args to constructor of GemmOperation:
+- gemm_kind
+- arch
+- tile_description
+- element_epilogue
+- epilogue_functor (EpilogueFunctor)
+- swizzling_functor (SwizzlingFunctor)
+- D 
+- kernel_schedule (KernelScheduleType)
+- epilogue_schedule (EpilogueScheduleType)
+- tile_scheduler (TileSchedulerType)
+
+
+'''
 class GemmOperation:
   #
   def __init__(self, gemm_kind, arch, tile_description, A, B, C, element_epilogue, \
@@ -803,6 +819,7 @@ ${compile_guard_end}
                       (sizeof(typename {str(operation.procedural_name())}_epilogue::SharedStorage))>"
 
     epi_tile_mn = "cutlass::epilogue::collective::EpilogueTileAuto"
+    # EA: This line replaced
 
     instance_layout_A, instance_layout_B, instance_layout_C , instance_layout_D = \
       (operation.A.layout, operation.B.layout, operation.C.layout, operation.D.layout)

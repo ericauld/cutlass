@@ -161,12 +161,13 @@ atoms are tiled."
 EA: I feel they're relying on the word "tiled", but not asking what that
     connotes, nor whether the thing it connotes is actually true.
 
+EA: So below, I guess the coordination between workers occurring in the kernel
+    layer (where there are no data dependencies) does not leverage hardware
+    features.
+
 That is, it is the largest number of threads in a grid that can cooperate by
 leveraging hardware features for accelerated communication and synchronization.
 These hardware features include
-
-EA: So I guess the coordination between workers occurring in the kernel layer
-    (where there are no data dependencies) does not leverage hardware features.
 
 * asynchronous array copy (e.g., from global memory to shared memory);
 
@@ -174,29 +175,27 @@ EA: So I guess the coordination between workers occurring in the kernel layer
 
 * synchronization operations for clusters, thread blocks, and/or warps; and/or
 
-EA: OK, here it sounds like CTAs in the same cluster can cooperate using policy
-    in the collective layer.
-
 * hardware acceleration (such as barriers) for ensuring that data dependencies
   between asynchronous operations are met.
+
+EA: OK, in bullet point 3 it sounds like CTAs in the same cluster can cooperate
+    using policy in the collective layer.
 
 A Collective uses the `TiledMma` and `TiledCopy` API (see below) to access
 operations that copy and perform MMA on tiles.
 
+The next sentence makes it sound like a colluective can span multiple thread
+blocks, which I think isn't true.
+
 Different units of parallelism (e.g., threads, warps, or thread blocks) in a
-Collective might have different roles. 
-
-EA: Wait, a collective can span multiple thread blocks? Now I really don't
-understand.
-
-For example, in "warp-specialized" algorithms, some warps may be responsible for
-copying data, while others may be responsible for computation. Nevertheless, the
-different units of parallelism still need to share data and coordinate access to
-the shared data. For example, the producer warps in a warp-specialized algorithm
-that copy input matrix tiles into shared memory need to let the consumer MMA
-warp(s) know that their MMA inputs are ready. We contrast this with the
-`kernel::` layer API, which schedules the collectives over *independent* tiles
-in the grid.
+Collective might have different roles. For example, in "warp-specialized"
+algorithms, some warps may be responsible for copying data, while others may be
+responsible for computation. Nevertheless, the different units of parallelism
+still need to share data and coordinate access to the shared data. For example,
+the producer warps in a warp-specialized algorithm that copy input matrix tiles
+into shared memory need to let the consumer MMA warp(s) know that their MMA
+inputs are ready. We contrast this with the `kernel::` layer API, which
+schedules the collectives over *independent* tiles in the grid.
 
 EA: OK, so "a kernel layer policy sees workers as having no data dependencies"
     is an important thing

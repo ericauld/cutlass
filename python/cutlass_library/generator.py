@@ -34,6 +34,147 @@
 Utilities for enumerating CUTLASS library kernels
 """
 
+"""
+EA: grep -nw 'def\|class' python/cutlass_library/generator.py
+
+49:def logging_prefix(indent_level: int = 0) -> str:
+55:def log_debug_line(line: str, indent_level: int = 0) -> None:
+70:def _add_package_disablement_flag(argparser):
+99:def CudaToolkitVersionSatisfies(semantic_ver_string, major, minor, patch = 0):
+118:def EpilogueAlignment(max_alignment, tile, epilogue_steps = 8):
+121:  def product(X, identity = 1):
+130:def DefaultSwizzlingFunctor():
+135:def CreateGemmOperator(manifest, layouts, tile_descriptions, data_type, \
+174:def CreateGemmUniversal3xOperator(
+223:def CreateSparseGemmOperator(manifest, layouts, tile_descriptions, data_type, \
+261:def CreateGemmPlanarComplexOperator(manifest, layouts, tile_descriptions, data_type, \
+294:def CreateGemmGroupedOperator(manifest, layouts, tile_descriptions, data_type, \
+330:def CreateRankKOperator(manifest, layouts, fill_modes, tile_descriptions, data_type, \
+377:def CreateTrmmOperator(manifest, layouts, side_modes, fill_modes, diag_types, tile_descriptions, data_type, \
+417:def CreateSymmOperator(manifest, layouts, side_modes, fill_modes, tile_descriptions, data_type, \
+476:def CreateConv2dOperator(manifest, layout, tile_descriptions, data_type, alignment_constraints, \
+585:def CreateConv2dFixedChannelsOperator(manifest, layout, tile_descriptions, data_type, channel_counts, \
+632:def CreateConv2dFewChannelsOperator(manifest, layout, tile_descriptions, data_type, channel_counts, \
+677:def CreateConv3dOperator(manifest, layout, tile_descriptions, data_type, alignment, \
+752:def CreateDepthwiseConv2dOperator(manifest, layout, tile_descriptions, data_type, alignment_constraints, \
+808:class ConvOperation3x:
+812:  distinguish between 2-D and 3-D convolutions by kernel class name.
+814:  whether the convolution is 2-D or 3-D.  Thus, this class deduces
+818:  def __init__(self,
+863:  def __str__(self):
+866:  def is_complex(self):
+874:  def is_mixed_input(self):
+877:  def accumulator_type(self):
+883:  def short_math_name(self):
+889:  def is_tensor_op(self):
+896:  def instruction_shape_string(self):
+909:  def intermediate_type_string(self):
+926:  def core_name(self):
+932:  def extended_name(self):
+941:  def is_complex(self):
+949:  def layout_names(self):
+958:  def extended_name(self):
+968:  def configuration_name(self):
+985:  def procedural_name(self):
+988:def convolution_tensor_layout_type_to_operation_kind(layout: LayoutType) -> OperationKind:
+996:def CreateConvOperator3x(manifest: Manifest,
+1075:  def input_and_output_layouts(spatial_dim: int, kind: ConvKind) -> Tuple[LayoutType, LayoutType]:
+1098:  def dims_to_layouts(A_B_C: Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int]]) -> \
+1121:  def make_combinations():
+1169:def GenerateSM50_Simt(manifest, cuda_version):
+1221:def GenerateSM50_Simt_complex(manifest, cuda_version):
+1268:def GenerateSM50(manifest, cuda_version):
+1276:def GenerateSM60_Simt(manifest, cuda_version):
+1319:def GenerateSM60_Simt_DepthwiseConv2d(manifest, cuda_version):
+1393:def GenerateSM60(manifest, cuda_version):
+1401:def GenerateSM61_Simt(manifest, cuda_version):
+1453:def GenerateSM61(manifest, cuda_version):
+1460:def GenerateSM70_TensorOp_884(manifest, cuda_version):
+1531:def GenerateSM70_PlanarComplexTensorOp_884(manifest, cuda_version):
+1598:def GenerateSM70_WmmaTensorOp_161616(manifest, cuda_version):
+1660:def GenerateSM70(manifest, cuda_version):
+1672:def GenerateSM75_TensorOp_1688_FewChannels(manifest, cuda_version, math_inst):
+1713:def GenerateSM75_TensorOp_1688(manifest, cuda_version):
+1791:def GenerateSM75_PlanarComplexTensorOp_1688(manifest, cuda_version):
+1859:def GenerateSM75_TensorOp_8816_TN(manifest, cuda_version):
+1961:def GenerateSM75_TensorOp_8816_Interleaved(manifest, cuda_version):
+2020:def GenerateSM75_TensorOp_8832_TN(manifest, cuda_version):
+2102:def GenerateSM75_TensorOp_8832_Interleaved(manifest, cuda_version):
+2162:def GenerateSM75_TensorOp_88128(manifest, cuda_version):
+2207:def GenerateSM75_WmmaTensorOp_161616(manifest, cuda_version):
+2265:def GenerateSM75_Simt_complex(manifest, cuda_version):
+2301:def GenerateSM75(manifest, cuda_version):
+2317:def GenerateSM80_TensorOp_16816(manifest, cuda_version):
+2414:def GenerateSM80_SparseTensorOp_16832(manifest, cuda_version):
+2492:def GenerateSM80_PlanarComplexTensorOp_16816(manifest, cuda_version):
+2565:def GenerateSM80_TensorOp_16816_mixed_input_upcast_a(manifest, cuda_version):
+2663:def GenerateSM80_TensorOp_16816_mixed_input_upcast_b(manifest, cuda_version):
+2767:def GenerateSM80_TensorOp_16832_TN(manifest, cuda_version):
+2860:def GenerateSM80_SparseTensorOp_16864_TN(manifest, cuda_version):
+2915:def GenerateSM80_TensorOp_16832_Interleaved(manifest, cuda_version):
+2969:def GenerateSM80_TensorOp_16864_TN(manifest, cuda_version):
+3044:def GenerateSM80_SparseTensorOp_168128_TN(manifest, cuda_version):
+3098:def GenerateSM80_TensorOp_16864_Interleaved(manifest, cuda_version):
+3151:def GenerateSM80_TensorOp_168256(manifest, cuda_version):
+3209:def GenerateSM80_TensorOp_1688(manifest, cuda_version):
+3284:def GenerateSM80_TensorOp_1688_fast_math(manifest, cuda_version):
+3352:def GenerateSM80_TensorOp_1688_fast_fp32_math(manifest, cuda_version):
+3403:def GenerateSM80_TensorOp_1688_fast_fp32_math_complex(manifest, cuda_version):
+3451:def GenerateSM80_SparseTensorOp_16816_fast_math(manifest, cuda_version):
+3500:def GenerateSM80_TensorOp_1688_complex(manifest, cuda_version):
+3549:def GenerateSM80_TensorOp_1688_rank_k(manifest, cuda_version):
+3608:def GenerateSM80_TensorOp_1688_rank_k_complex(manifest, cuda_version):
+3663:def GenerateSM80_TensorOp_1688_trmm(manifest, cuda_version):
+3730:def GenerateSM80_TensorOp_1688_trmm_complex(manifest, cuda_version):
+3792:def GenerateSM80_TensorOp_1688_symm(manifest, cuda_version):
+3857:def GenerateSM80_TensorOp_1688_symm_complex(manifest, cuda_version):
+3915:def GenerateSM80_TensorOp_884(manifest, cuda_version):
+3962:def GenerateSM80_TensorOp_884_complex(manifest, cuda_version):
+4018:def GenerateSM80_TensorOp_884_complex_gaussian(manifest, cuda_version):
+4065:def GenerateSM80_TensorOp_884_rank_k(manifest, cuda_version):
+4110:def GenerateSM80_TensorOp_884_rank_k_complex(manifest, cuda_version):
+4160:def GenerateSM80_TensorOp_884_rank_k_complex_gaussian(manifest, cuda_version):
+4209:def GenerateSM80_TensorOp_884_trmm(manifest, cuda_version):
+4257:def GenerateSM80_TensorOp_884_trmm_complex(manifest, cuda_version):
+4311:def GenerateSM80_TensorOp_884_trmm_complex_gaussian(manifest, cuda_version):
+4362:def GenerateSM80_TensorOp_884_symm(manifest, cuda_version):
+4410:def GenerateSM80_TensorOp_884_symm_complex(manifest, cuda_version):
+4462:def GenerateSM80_TensorOp_884_symm_complex_gaussian(manifest, cuda_version):
+4516:def GenerateSM80_Simt_f32(manifest, cuda_version):
+4568:def GenerateSM80_Simt_f64(manifest, cuda_version):
+4613:def GenerateSM80_Simt_complex(manifest, cuda_version):
+4670:def GenerateSM80(manifest, cuda_version):
+4714:def GenerateSM89_TensorOp_16832_fp8(manifest, cuda_version):
+4845:def GenerateSM89_SparseTensorOp_16864_fp8(manifest, cuda_version):
+4943:def GenerateSM89(manifest, cuda_version):
+4950:def GenerateSM90_TensorOp_16b_WGMMA_gemm(manifest, cuda_version):
+5152:def GenerateSM90_TensorOp_16b_WGMMA_alignx_gemm(manifest, cuda_version):
+5300:def GenerateSM90_TensorOp_tf32_WGMMA_gemm(manifest, cuda_version):
+5424:def GenerateSM90_TensorOp_tf32_WGMMA_alignx_gemm(manifest, cuda_version):
+5509:def GenerateSM90_TensorOp_int8_WGMMA_gemm(manifest, cuda_version):
+5614:def GenerateSM90_TensorOp_int8_WGMMA_alignx_gemm(manifest, cuda_version):
+5688:def GenerateSM90_TensorOp_fp8_WGMMA_gemm(manifest, cuda_version):
+5943:def GenerateSM90_TensorOp_fp8_WGMMA_alignx_gemm(manifest, cuda_version):
+6126:def GenerateSM90_TensorOp_1684(manifest, cuda_version):
+6173:def GenerateSM90_TensorOp_1684_complex(manifest, cuda_version):
+6230:def GenerateSM90_TensorOp_1684_complex_gaussian(manifest, cuda_version):
+6277:def GenerateSM90_TensorOp_1684_rank_k(manifest, cuda_version):
+6322:def GenerateSM90_TensorOp_1684_rank_k_complex(manifest, cuda_version):
+6372:def GenerateSM90_TensorOp_1684_rank_k_complex_gaussian(manifest, cuda_version):
+6421:def GenerateSM90_TensorOp_1684_trmm(manifest, cuda_version):
+6469:def GenerateSM90_TensorOp_1684_trmm_complex(manifest, cuda_version):
+6523:def GenerateSM90_TensorOp_1684_trmm_complex_gaussian(manifest, cuda_version):
+6574:def GenerateSM90_TensorOp_1684_symm(manifest, cuda_version):
+6622:def GenerateSM90_TensorOp_1684_symm_complex(manifest, cuda_version):
+6674:def GenerateSM90_TensorOp_1684_symm_complex_gaussian(manifest, cuda_version):
+6727:def GenerateSM90_Conv3x(manifest, cuda_version,
+7041:  # TileDescription class needs it.  The 4 in the default
+7056:  def make_math_instruction(data_types: Dict[str, DataType],
+7090:def GenerateSM90(manifest, cuda_version):
+7115:def numeric_log_level(log_level: str) -> int:
+7134:def define_parser():
+"""
+
 import argparse
 import enum
 from itertools import chain, product

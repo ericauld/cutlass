@@ -260,7 +260,7 @@ ComplexTransformTag3x = {
   ComplexTransform.conj: 'cute::conjugate',
 }
 
-#
+# EA: Huh?
 RealComplexBijection = [
   (DataType.f16, DataType.cf16),
   (DataType.f32, DataType.cf32),
@@ -295,7 +295,7 @@ class ComplexMultiplyOp(enum.Enum):
 
 ###################################################################################################
 
-#
+# EA: Interesting
 class MathOperation(enum.Enum):
   multiply_add = enum_auto()
   multiply_add_saturate = enum_auto()
@@ -333,6 +333,7 @@ class LayoutType(enum.Enum):
   ColumnMajor = enum_auto()
   RowMajor = enum_auto()
   ColumnMajorInterleaved2 = enum_auto()
+  # EA: Hmmm interleaved...what's that mean?
   RowMajorInterleaved2 = enum_auto()
   ColumnMajorInterleaved32 = enum_auto()
   RowMajorInterleaved32 = enum_auto()
@@ -387,10 +388,15 @@ TransposedLayout = {
   LayoutType.RowMajorInterleaved64: LayoutType.ColumnMajorInterleaved64,
   LayoutType.TensorNHWC: LayoutType.TensorNHWC
 }
+# EA: Interesting, NHWC is its own transpose
 
 #
 ShortLayoutTypeNames = {
   LayoutType.ColumnMajor: 'n',
+  # EA: Wait, I thought the
+  #    n <~> col major
+  #    t <~> row major
+  # mapping was imperfect
   LayoutType.ColumnMajorInterleaved2: 'n2',
   LayoutType.ColumnMajorInterleaved32: 'n32',
   LayoutType.ColumnMajorInterleaved64: 'n64',
@@ -451,6 +457,11 @@ KernelScheduleTag = {
   KernelScheduleType.TmaWarpSpecializedPingpongFP8FastAccum: 'cutlass::gemm::KernelTmaWarpSpecializedPingpongFP8FastAccum',
   KernelScheduleType.ImplicitTmaWarpSpecializedSm90: 'cutlass::conv::KernelImplicitTmaWarpSpecializedSm90',
 }
+# EA: I'd like to understand the difference between all these TMA ones.
+
+# EA: So I guess the way to think of it is not exactly that TMA / not TMA is a
+# kernel-level choice, but rather some kernel choices are only compatible with
+# the choice of TMA for the atom
 
 #
 KernelScheduleSuffixes = {
