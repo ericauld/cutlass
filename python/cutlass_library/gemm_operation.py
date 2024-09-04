@@ -60,7 +60,21 @@ _LOGGER = logging.getLogger(__name__)
 
 #
 '''
-EA: 
+EA:
+
+This file contains the classes
+78:class GemmOperation:
+268:  # Generate a short string representing the operation class
+319:class GroupedGemmOperation(GemmOperation):
+347:class EmitGemmInstance:
+465:class EmitSparseGemmInstance:
+559:class EmitGemmUniversalInstance:
+720:class EmitGemmUniversal3xInstance:
+901:class EmitGemmPlanarComplexInstance:
+989:class EmitGemmPlanarComplexArrayInstance:
+1076:class EmitGemmGroupedInstance:
+1209:class EmitGemmConfigurationLibrary:
+
 Args to constructor of GemmOperation:
 - gemm_kind
 - arch
