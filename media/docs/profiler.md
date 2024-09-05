@@ -96,6 +96,9 @@ Profiling:
 
   --profiling-iterations=<iterations>              Number of iterations to profile each kernel. If zero, kernels
                                                    are launched up to the profiling duration.
+```
+EA: How is the profilng duration set?
+```bash
 
   --warmup-iterations=<iterations>                 Number of iterations to execute each kernel prior to profiling.
 
