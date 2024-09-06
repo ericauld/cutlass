@@ -286,23 +286,35 @@ struct ExampleRunner {
     "Epilogue visitor trees are currently only supported by the TMA warp-specialized epilogue");
   static constexpr auto RoundStyle = cutlass::FloatRoundStyle::round_to_nearest;
 
-  // EVTs can be constructed by composing the fundamental load/store/compute visitor operations defined in include/cutlass/epilogue/fusion
-  // For more complex examples of EVT construction please refer to include/cutlass/epilogue/fusion/sm90_callbacks_tma_warpspecialized.hpp
+  // EVTs can be constructed by composing the fundamental load/store/compute
+  // visitor operations defined in include/cutlass/epilogue/fusion. For more
+  // complex examples of EVT construction please refer to
+  // include/cutlass/epilogue/fusion/sm90_callbacks_tma_warpspecialized.hpp
   using CustomEVT =  // alpha * acc + beta * C
-    cutlass::epilogue::fusion::Sm90EVT<cutlass::epilogue::fusion::Sm90Compute<cutlass::homogeneous_multiply_add, ElementD, ElementCompute, RoundStyle>, // beta * C + (alpha * acc)
+    cutlass::epilogue::fusion::Sm90EVT<
+      cutlass::epilogue::fusion::Sm90Compute<
+        cutlass::homogeneous_multiply_add, ElementD, ElementCompute, RoundStyle>,
+      // beta * C + (alpha * acc)
       cutlass::epilogue::fusion::Sm90ScalarBroadcast<ElementScalar>, // beta
       cutlass::epilogue::fusion::Sm90SrcFetch<ElementC>, // C
-      cutlass::epilogue::fusion::Sm90EVT<cutlass::epilogue::fusion::Sm90Compute<cutlass::multiplies, ElementCompute, ElementCompute, RoundStyle>, // alpha * acc
+      cutlass::epilogue::fusion::Sm90EVT<
+        cutlass::epilogue::fusion::Sm90Compute<
+             cutlass::multiplies, ElementCompute, ElementCompute, RoundStyle>, // alpha * acc
         cutlass::epilogue::fusion::Sm90ScalarBroadcast<ElementScalar>, // alpha
         cutlass::epilogue::fusion::Sm90AccFetch // acc
       >
     >;
 
-  // A predefined set of fusion operations (implemented with EVT) are supported by the TMA warp-specialized epilogue.
-  // Users can select one of these operations by passing one of the tags defined in include/cutlass/epilogue/fusion/operations.hpp
-  // to the CollectiveBuilder. This frees the user from having to compute additional parameters such as stage counts and copy atoms/layouts.
-  // These tags also provide additional metadata that can be queried at compile time.
-  using DefaultOperation = cutlass::epilogue::fusion::LinearCombination<ElementD, ElementCompute, ElementC, ElementScalar, RoundStyle>;
+  // A predefined set of fusion operations (implemented with EVT) are supported
+  // by the TMA warp-specialized epilogue. Users can select one of these
+  // operations by passing one of the tags defined in
+  // include/cutlass/epilogue/fusion/operations.hpp to the CollectiveBuilder.
+  // This frees the user from having to compute additional parameters such as
+  // stage counts and copy atoms/layouts. These tags also provide additional
+  // metadata that can be queried at compile time.
+  using DefaultOperation = 
+    cutlass::epilogue::fusion::LinearCombination<ElementD, ElementCompute, 
+                                    ElementC, ElementScalar, RoundStyle>;
 
   using CollectiveEpilogue = typename cutlass::epilogue::collective::CollectiveBuilder<
       cutlass::arch::Sm90, cutlass::arch::OpClassTensorOp,
@@ -322,7 +334,8 @@ struct ExampleRunner {
       ElementAccumulator,
       Shape<_128,_128,_64>, Shape<_2,_1,_1>,
       cute::conditional_t<cute::is_same_v<StageCountType, cutlass::gemm::collective::StageCountAuto>,
-          cutlass::gemm::collective::StageCountAutoCarveout<static_cast<int>(sizeof(typename CollectiveEpilogue::SharedStorage))>,
+          cutlass::gemm::collective::StageCountAutoCarveout<
+             static_cast<int>(sizeof(typename CollectiveEpilogue::SharedStorage))>,
           StageCountType>,
       MainloopScheduleType
     >::CollectiveOp;
@@ -611,7 +624,8 @@ int main(int argc, char const **args) {
 
   // Here, we override the scheduling policy to use Hopper's TMA feature alongside the warp-specialized
   // scheduling policy, and an epilogue that does not use any shared memory.
-  ExampleRunner<cutlass::gemm::KernelTmaWarpSpecialized, cutlass::epilogue::NoSmemWarpSpecialized> ws_schedule_auto_stage_runner;
+  ExampleRunner<cutlass::gemm::KernelTmaWarpSpecialized, 
+                cutlass::epilogue::NoSmemWarpSpecialized> ws_schedule_auto_stage_runner;
   passed = ws_schedule_auto_stage_runner.run(options, hw_info);
   print_result("Warp-specialized TMA schedule with automatically-selected stage count", passed);
 
@@ -642,7 +656,9 @@ int main(int argc, char const **args) {
     cutlass::gemm::PersistentScheduler,
     true> ws_cooperative_schedule_auto_stage_custom_evt_runner;
   passed = ws_cooperative_schedule_auto_stage_custom_evt_runner.run(options, hw_info);
-  print_result("Cooperative warp-specialized TMA schedule using custom epilogue visitor tree with automatically-selected stage count", passed);
+  print_result(
+    "Cooperative warp-specialized TMA schedule using custom epilogue visitor tree with automatically-selected stage count", 
+    passed);
 
 #endif
 
