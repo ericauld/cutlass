@@ -393,6 +393,7 @@ template<
 >
 struct Sm90ScalarBroadcast {
   static_assert(is_static_v<decltype(take<0,2>(StrideMNL{}))>); // batch stride can be dynamic or static
+  // EA: Are they saying the "batch stride" is mode 1?
   static_assert(take<0,2>(StrideMNL{}) == Stride<_0,_0>{});
 
   struct SharedStorage { };
