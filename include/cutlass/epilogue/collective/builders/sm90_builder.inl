@@ -306,7 +306,7 @@ struct Sm90TmaBuilderImpl {
 ///////////////////////////////////////////////////////////////////////////////
 // Descriptor classes for defining EVT nodes
 // Some of the epilogue visitor nodes require non-intuitive template arguments
-// such as CopyOpS2R for AuxLoad node. Traditionaly, these are resolved by the
+// such as CopyOpS2R for AuxLoad node. Traditionally, these are resolved by the
 // builder classes. Here we provide a set of descriptor classes that resolve
 // these template arguments from more intuitive types such as Stride, Layout
 
