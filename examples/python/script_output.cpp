@@ -1,5 +1,16 @@
 using namespace cute;
 
+/*
+EA: This is expressing the computation
+
+O, alpha, C, beta, E (aux), b
+      |->
+F, F + ReLU(F + 1) + b
+
+where
+
+F := alpha * O + beta * C + E
+ */
 
 using EpilogueDescriptor = cutlass::epilogue::collective::detail::EpilogueDescriptor<
   cute::Shape<_128, _128, _64>, cutlass::epilogue::collective::EpilogueTileAuto,
@@ -23,6 +34,18 @@ using Aux = cutlass::epilogue::fusion::Sm90AuxLoad<
     AuxDescriptor::Stages, typename AuxDescriptor::EpilogueTile, cutlass::half_t,
     cute::Stride<int64_t, cute::Int<1>, cute::Int<0>>, typename AuxDescriptor::SmemLayoutAtom, typename AuxDescriptor::CopyOpS2R
 >;
+
+/*
+EA: template params for struct Sm90AuxLoad:
+  int Stages,
+  class EpilogueTile,
+  class Element,
+  class StrideMNL,
+  class SmemLayoutAtom,
+  class CopyOpS2R,
+  int Alignment = 128 / sizeof_bits_v<Element>,
+  bool EnableNullptr = true // Fallback scalar broadcast for nullptr params
+*/
 
 using Beta = cutlass::epilogue::fusion::Sm90ScalarBroadcast<
     float, cute::Stride<cute::Int<0>, cute::Int<0>, cute::Int<0>>, 1, cutlass::multiplies

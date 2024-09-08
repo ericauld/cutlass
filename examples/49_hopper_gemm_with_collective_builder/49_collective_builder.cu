@@ -580,6 +580,8 @@ int main(int argc, char const **args) {
   // The KernelHardwareInfo struct holds the number of SMs on the GPU with a given device ID. This
   // information is used by the underlying kernel.
   cutlass::KernelHardwareInfo hw_info;
+  // EA: This struct has a method `query_device_multiprocessor_count` which
+  // wraps calls to `cudaGetDevice` and `cudaDeviceGetAttribute`
 
   // Change device_id to another value if you are running on a machine with multiple GPUs and wish
   // to use a GPU other than that with device ID 0.
