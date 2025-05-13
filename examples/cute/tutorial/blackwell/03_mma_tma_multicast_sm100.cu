@@ -117,6 +117,37 @@ using namespace cute;
 
 #if defined(CUTLASS_ARCH_MMA_SM100_SUPPORTED)
 
+#define PRINT_NAME(S) \
+  do { \
+    print("============= " #S " (host) ===============\n"); \
+  } while (0)
+
+#define PRINTLN_D(msg)                             \
+  do {                                             \
+    if (thread0()) {                               \
+      print(msg);                                  \
+      print("\n");                                 \
+    }                                              \
+    __syncthreads();                               \
+  } while (0)
+
+#define DBG_D(x)                                                          \
+  do {                                                                    \
+    if (thread0()) {                                                      \
+      print(#x ":\t");                                                    \
+      print(x);                                                           \
+      print("\n");                                                        \
+    }                                                                     \
+    __syncthreads();                                                      \
+  } while (0)
+
+#define DBG_H(x)                                                          \
+  do {                                                                    \
+    print(#x ":\t");                                                      \
+    print(x);                                                             \
+    print("\n");                                                          \
+  } while (0)
+
 // The shared memory buffers for A and B matrices.
 template <class TypeA,           // Tensor A data type
           class TypeB,           // Tensor B data type
@@ -285,16 +316,24 @@ gemm_device(ATensor mA,                      // (Gemm_M, Gemm_K)
   auto cta_in_cluster_coord_vmnk = cluster_layout_vmnk.get_flat_coord(int(cute::block_rank_in_cluster()));
 
   // Project the cluster_layout for tma_A along the N-modes
-  auto [tAgA, tAsA] = tma_partition(tma_atom_A,
-                                    get<2>(cta_in_cluster_coord_vmnk),          // The CTA coordinate along N mode of the cluster
-                                    make_layout(size<2>(cluster_layout_vmnk)),  // The CTA layout along N mode of the cluster
-                                    group_modes<0,3>(tCsA), group_modes<0,3>(tCgA));
+  auto [tAgA, tAsA] = tma_partition(tma_atom_A, get<2>(cta_in_cluster_coord_vmnk), make_layout(size<2>(cluster_layout_vmnk)), group_modes<0,3>(tCsA), group_modes<0,3>(tCgA));
+  PRINTLN_D("auto [tAgA, tAsA] = tma_partition(tma_atom_A, get<2>(cta_in_cluster_coord_vmnk), make_layout(size<2>(cluster_layout_vmnk)), group_modes<0,3>(tCsA), group_modes<0,3>(tCgA));");
+  //                                                                     DBG_D(tAgA); DBG_D(tAsA);
+                                                                      //  DBG_D(([tAgA, tAsA] = tma_partition(tma_atom_A, get<2>(cta_in_cluster_coord_vmnk), make_layout(size<2>(cluster_layout_vmnk)), group_modes<0,3>(tCsA), group_modes<0,3>(tCgA))));
+  // auto [tAgA, tAsA] = tma_partition(tma_atom_A,
+  //                                   get<2>(cta_in_cluster_coord_vmnk),          // The CTA coordinate along N mode of the cluster
+  //                                   make_layout(size<2>(cluster_layout_vmnk)),  // The CTA layout along N mode of the cluster
+  //                                   group_modes<0,3>(tCsA), group_modes<0,3>(tCgA));
 
   // Project the cluster_layout for tma_B along the M-modes
-  auto [tBgB, tBsB] = tma_partition(tma_atom_B,
-                                    get<1>(cta_in_cluster_coord_vmnk),          // The CTA coordinate along M mode of the cluster
-                                    make_layout(size<1>(cluster_layout_vmnk)),  // The CTA layout along M mode of the cluster
-                                    group_modes<0,3>(tCsB), group_modes<0,3>(tCgB));
+  auto [tBgB, tBsB] = tma_partition(tma_atom_B, get<1>(cta_in_cluster_coord_vmnk), make_layout(size<1>(cluster_layout_vmnk)), group_modes<0,3>(tCsB), group_modes<0,3>(tCgB));
+  PRINTLN_D("auto [tBgB, tBsB] = tma_partition(tma_atom_B, get<1>(cta_in_cluster_coord_vmnk), make_layout(size<1>(cluster_layout_vmnk)), group_modes<0,3>(tCsB), group_modes<0,3>(tCgB));");
+  //                                                                     DBG_D(tBgB); DBG_D(tBsB);
+                                                                      //  DBG_D(([tBgB, tBsB] = tma_partition(tma_atom_B, get<1>(cta_in_cluster_coord_vmnk), make_layout(size<1>(cluster_layout_vmnk)), group_modes<0,3>(tCsB), group_modes<0,3>(tCgB))));
+  // auto [tBgB, tBsB] = tma_partition(tma_atom_B,
+  //                                   get<1>(cta_in_cluster_coord_vmnk),          // The CTA coordinate along M mode of the cluster
+  //                                   make_layout(size<1>(cluster_layout_vmnk)),  // The CTA layout along M mode of the cluster
+  //                                   group_modes<0,3>(tCsB), group_modes<0,3>(tCgB));
 
   // Project the cluster_layout and cta_coord along the N-mode to determine the multicast mask for A
   uint16_t tma_mcast_mask_a = create_tma_multicast_mask<2>(cluster_layout_vmnk, cta_in_cluster_coord_vmnk);
@@ -426,9 +465,13 @@ void gemm_host_f16xf16_f32_f32_tnt(TypeA const* device_ptr_A, LayoutA layout_A,
 
   // Represent the full tensors in global memory
   Tensor mA = make_tensor(make_gmem_ptr(device_ptr_A), layout_A);      // (Gemm_M, Gemm_K)
+                                                                       DBG_H(mA = make_tensor(make_gmem_ptr(device_ptr_A), layout_A));
   Tensor mB = make_tensor(make_gmem_ptr(device_ptr_B), layout_B);      // (Gemm_N, Gemm_K)
+                                                                       DBG_H(mB = make_tensor(make_gmem_ptr(device_ptr_B), layout_B));
   Tensor mC = make_tensor(make_gmem_ptr(device_ptr_C), layout_C);      // (Gemm_M, Gemm_N)
+                                                                       DBG_H(mC = make_tensor(make_gmem_ptr(device_ptr_C), layout_C));
   Tensor mD = make_tensor(make_gmem_ptr(device_ptr_D), layout_D);      // (Gemm_M, Gemm_N)
+                                                                       DBG_H(mD = make_tensor(make_gmem_ptr(device_ptr_D), layout_D));
 
   // Get M, N, K dimensions of the GEMM we are running
   auto Gemm_M = shape<0>(layout_A);
@@ -466,6 +509,7 @@ void gemm_host_f16xf16_f32_f32_tnt(TypeA const* device_ptr_A, LayoutA layout_A,
   auto bN = tile_size<1>(tiled_mma);             // MMA Tile N. We'll use 1 MMAs per MMA Tile M.
   auto bK = tile_size<2>(tiled_mma) * Int<4>{};  // MMA Tile K. We'll use 4 MMAs per MMA Tile K. For 16b types, tcgen05.mma has K16.
   auto mma_tiler = make_shape(bM, bN, bK);       // (MMA_M, MMA_N, MMA_K)
+                                                                       DBG_H(mma_tiler = make_shape(bM, bN, bK));
 
   // In SM90,  the MMAs are CTA-local and perform thread-level partitioning.
   // In SM100, the MMAs are Cluster-local and perform CTA-level partitioning.
@@ -525,6 +569,8 @@ void gemm_host_f16xf16_f32_f32_tnt(TypeA const* device_ptr_A, LayoutA layout_A,
   Layout cluster_layout_vmnk = tiled_divide(make_layout(cluster_shape),
                                             make_tile(typename decltype(tiled_mma)::AtomThrID{}));
 
+  // Copy_Atom tma_atom_A = make_tma_atom(SM90_TMA_LOAD_MULTICAST{}, mA, sA_layout, select<0,2>(mma_tiler), size<2>(cluster_layout_vmnk));
+                                                                      //  DBG_H(tma_atom_A = make_tma_atom(SM90_TMA_LOAD_MULTICAST{}, mA, sA_layout, select<0,2>(mma_tiler), size<2>(cluster_layout_vmnk)));
   Copy_Atom tma_atom_A = make_tma_atom(
       SM90_TMA_LOAD_MULTICAST{},       // TMA load operation with multicast
       mA,                              // Source GMEM tensor
@@ -566,10 +612,10 @@ void gemm_host_f16xf16_f32_f32_tnt(TypeA const* device_ptr_A, LayoutA layout_A,
   ////////////////////////////////////////////////////////////
 
   dim3 dimBlock(128);
-  dim3 dimCluster(size<0>(cluster_shape), size<1>(cluster_shape), size<2>(cluster_shape));
+  dim3 dimCluster(size<0>(cluster_shape), size<1>(cluster_shape), size<2>(cluster_shape)); DBG_H(dimCluster);
   dim3 dimGrid(round_up(size(ceil_div(Gemm_M, bM)), dimCluster.x),
-               round_up(size(ceil_div(Gemm_N, bN)), dimCluster.y));
-  int  smemBytes = sizeof(SMEMStorage);
+               round_up(size(ceil_div(Gemm_N, bN)), dimCluster.y));                        DBG_H(dimGrid);
+  int  smemBytes = sizeof(SMEMStorage);                                                    DBG_H(smemBytes = sizeof(SMEMStorage));
 
   auto* kernel_ptr = &gemm_device<SMEMStorage,
                                   decltype(mA_tma), decltype(mB_tma), decltype(mC), decltype(mD),
